@@ -1,0 +1,2127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>💧 PADRES - Tableau de bord SICASIL</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js?v=2.4"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js?v=2.4"></script>
+<style>
+:root {
+  --sidebar-bg: #f0f2f6;
+  --sidebar-active: #e3ecf7;
+  --primary: #1f77b4;
+  --red: #d62728;
+  --card-border: #e0e0e0;
+  --text: #31333f;
+  --text-light: #6c6c6c;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: #ffffff;
+  color: var(--text);
+  display: flex;
+  min-height: 100vh;
+}
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: var(--sidebar-bg);
+  padding: 20px 0;
+  flex-shrink: 0;
+  border-right: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  padding: 20px;
+  color: var(--text);
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-logo {
+  max-width: 100%;
+  max-height: 60px;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.nav-item {
+  display: block;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-size: 15px;
+  color: var(--text);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: background 0.2s;
+}
+.nav-item:hover { background: #e8eaef; }
+.nav-item.active {
+  background: var(--sidebar-active);
+  border-left-color: var(--primary);
+  font-weight: 600;
+}
+/* Main */
+.main {
+  flex: 1;
+  padding: 30px 40px;
+  max-width: 1400px;
+  min-width: 0;
+}
+.page { display: none; }
+.page.active { display: block; }
+h1 { font-size: 26px; margin-bottom: 20px; }
+h2 { font-size: 20px; margin: 25px 0 15px; }
+h3 { font-size: 16px; margin: 15px 0 10px; }
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-light);
+  font-size: 18px;
+  border: 2px dashed #ccc;
+  border-radius: 10px;
+  margin: 40px 0;
+}
+/* KPI cards */
+.kpi-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 18px 22px;
+  flex: 1;
+  min-width: 200px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+.kpi-label { font-size: 14px; color: var(--text-light); margin-bottom: 6px; }
+.kpi-value { font-size: 24px; font-weight: 700; }
+.kpi-sub { font-size: 13px; color: var(--text-light); margin-top: 4px; }
+/* Filter bar */
+.filter-bar {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px 20px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+.filter-bar label { font-weight: 600; font-size: 14px; }
+.filter-bar select, .filter-bar input {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  font-family: inherit;
+}
+.filter-bar .custom-dates { display: none; gap: 10px; align-items: center; }
+.filter-bar .custom-dates.show { display: flex; }
+.filter-bar .period-range-label {
+  font-size: 13px;
+  color: var(--text-light);
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* Chart containers */
+.chart-container {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.chart-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; }
+.chart-box { width: 100%; height: 420px; }
+.chart-box-sm { width: 100%; height: 350px; }
+/* App page */
+.file-upload {
+  border: 2px dashed #aaa;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.3s;
+  margin-bottom: 20px;
+}
+.file-upload:hover { border-color: var(--primary); }
+.file-upload input { display: none; }
+.file-upload .icon { font-size: 48px; margin-bottom: 10px; }
+.file-upload .text { font-size: 16px; color: var(--text-light); }
+.success-msg {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+.diagnostic {
+  background: #f8f9fa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+.diagnostic summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 15px;
+}
+.diagnostic-content { padding: 0 16px 16px; }
+.diagnostic-content table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.diagnostic-content th, .diagnostic-content td {
+  border: 1px solid #ddd;
+  padding: 6px 10px;
+  text-align: left;
+}
+.diagnostic-content th { background: #e9ecef; }
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+.data-table th, .data-table td { border: 1px solid #ddd; padding: 8px 12px; text-align: right; }
+.data-table th { background: #f0f2f6; text-align: left; }
+.data-table td:first-child, .data-table th:first-child { text-align: left; }
+/* Selector */
+.selector-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; flex-wrap: wrap; }
+.selector-row label { font-weight: 600; font-size: 14px; }
+.selector-row select {
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  font-family: inherit;
+}
+/* Year checkboxes */
+.year-selector { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.year-selector label { display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; }
+/* Responsive */
+@media (max-width: 900px) {
+  .sidebar { width: 70px; }
+  .sidebar-title { font-size: 14px; padding: 0 10px 15px; }
+  .nav-item { padding: 10px 10px; font-size: 13px; text-align: center; }
+  .main { padding: 20px 15px; }
+  .kpi-card { min-width: 150px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== SIDEBAR ==================== -->
+<nav class="sidebar">
+  <div class="sidebar-title">
+    <img class="sidebar-logo" src="https://sicasil.com/wp-content/uploads/2020/09/logo-sicasil-2.jpg" alt="SICASIL">
+  </div>
+  <a class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">📊 Tableau de bord</a>
+  <a class="nav-item" data-page="ressources" onclick="showPage('ressources')">💧 Ressources</a>
+  <a class="nav-item" data-page="production" onclick="showPage('production')">🏭 Production</a>
+  <a class="nav-item" data-page="ventes" onclick="showPage('ventes')">🚰 Ventes en gros</a>
+  <a class="nav-item" data-page="debits" onclick="showPage('debits')">🚱 Débits réservés</a>
+  <a class="nav-item" data-page="app" onclick="showPage('app')">⚙️ App</a>
+</nav>
+
+<!-- ==================== MAIN ==================== -->
+<div class="main">
+
+  <!-- ========== PAGE TABLEAU DE BORD ========== -->
+  <div class="page active" id="page-dashboard">
+    <h1>💧 PADRES - Tableau de bord SICASIL</h1>
+    <div id="dashboard-empty" class="empty-state" style="display:none;">
+      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    </div>
+    <div id="dashboard-content" style="display:none;">
+      <div class="filter-bar">
+        <label>📅 Période :</label>
+        <select id="global-period" onchange="onPeriodChange()">
+          <option value="last_day">Dernier jour</option>
+          <option value="last_7">7 derniers jours</option>
+          <option value="last_30" selected>30 derniers jours</option>
+          <option value="last_60">60 derniers jours</option>
+          <option value="ytd">Année en cours</option>
+          <option value="last_12m">12 derniers mois</option>
+          <option value="prev_year">Année précédente</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+        <span class="period-range-label" id="period-range-label"></span>
+        <div class="custom-dates" id="custom-dates">
+          <label>Du :</label>
+          <input type="date" id="custom-start" onchange="onCustomDateChange()">
+          <label>Au :</label>
+          <input type="date" id="custom-end" onchange="onCustomDateChange()">
+        </div>
+      </div>
+
+      <h2>📈 Production</h2>
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Mesure la plus récente</div>
+          <div class="kpi-value" id="kpi-latest">—</div>
+          <div class="kpi-sub" id="kpi-latest-date">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Production totale</div>
+          <div class="kpi-value" id="kpi-prod-total">—</div>
+          <div class="kpi-sub" id="kpi-prod-avg">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Ventes en gros</div>
+          <div class="kpi-value" id="kpi-veg-total">—</div>
+          <div class="kpi-sub" id="kpi-veg-avg">—</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Production totale et ventes en gros</div>
+        <div class="chart-box" id="chart-production"></div>
+      </div>
+
+      <h2>Prélèvements journaliers et compléments disponibles</h2>
+      <div class="selector-row">
+        <label>Mode d'affichage :</label>
+        <select id="prelev-mode" onchange="renderPrelevements()">
+          <option value="m3">m³/jour</option>
+          <option value="normalized">Normalisé (%)</option>
+        </select>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Prélèvements et compléments disponibles</div>
+        <div class="chart-box" id="chart-prelevements"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE RESSOURCES ========== -->
+  <div class="page" id="page-ressources">
+    <h1>💧 Ressources</h1>
+    <div id="ressources-empty" class="empty-state" style="display:none;">
+      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    </div>
+    <div id="ressources-content" style="display:none;">
+      <div class="filter-bar">
+        <label>📅 Période :</label>
+        <select id="global-period-2" onchange="onPeriodChange()">
+          <option value="last_day">Dernier jour</option>
+          <option value="last_7">7 derniers jours</option>
+          <option value="last_30" selected>30 derniers jours</option>
+          <option value="last_60">60 derniers jours</option>
+          <option value="ytd">Année en cours</option>
+          <option value="last_12m">12 derniers mois</option>
+          <option value="prev_year">Année précédente</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+        <span class="period-range-label" id="period-range-label-2"></span>
+        <div class="custom-dates" id="custom-dates-2">
+          <label>Du :</label>
+          <input type="date" id="custom-start-2" onchange="onCustomDateChange()">
+          <label>Au :</label>
+          <input type="date" id="custom-end-2" onchange="onCustomDateChange()">
+        </div>
+      </div>
+
+      <h2>Disponibilité détaillée des ressources</h2>
+      <div class="chart-container">
+        <div class="chart-title">Disponibilité des ressources (m³/jour)</div>
+        <div class="chart-box" id="chart-ressources"></div>
+      </div>
+
+      <h2>Répartition des ressources</h2>
+      <div class="chart-container">
+        <div class="chart-title">Répartition des ressources sur la période</div>
+        <div class="chart-box-sm" id="chart-ressources-pie"></div>
+        <table class="data-table" id="table-ressources"></table>
+      </div>
+
+      <h2>🏞️ Lac de Saint-Cassien</h2>
+      <div class="chart-container">
+        <div class="chart-title">Volume du lac de Saint-Cassien par année</div>
+        <div class="year-selector" id="cassien-years"></div>
+        <div class="chart-box" id="chart-cassien"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE PRODUCTION ========== -->
+  <div class="page" id="page-production">
+    <h1>🏭 Production</h1>
+    <div id="production-empty" class="empty-state" style="display:none;">
+      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    </div>
+    <div id="production-content" style="display:none;">
+      <div class="filter-bar">
+        <label>📅 Période :</label>
+        <select id="global-period-5" onchange="onPeriodChange()">
+          <option value="last_day">Dernier jour</option>
+          <option value="last_7">7 derniers jours</option>
+          <option value="last_30" selected>30 derniers jours</option>
+          <option value="last_60">60 derniers jours</option>
+          <option value="ytd">Année en cours</option>
+          <option value="last_12m">12 derniers mois</option>
+          <option value="prev_year">Année précédente</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+        <span class="period-range-label" id="period-range-label-5"></span>
+        <div class="custom-dates" id="custom-dates-5">
+          <label>Du :</label>
+          <input type="date" id="custom-start-5" onchange="onCustomDateChange()">
+          <label>Au :</label>
+          <input type="date" id="custom-end-5" onchange="onCustomDateChange()">
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Usine de Chateauneuf</div>
+        <div class="chart-box" id="chart-prod-chateauneuf"></div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Usine de Nartassier</div>
+        <div class="chart-box" id="chart-prod-nartassier"></div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Usine de St Jacques</div>
+        <div class="chart-box" id="chart-prod-stjacques"></div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Usine de l'Apié</div>
+        <div class="chart-box" id="chart-prod-apie"></div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">PDR (puits de la basse vallée de la Siagne)</div>
+        <div class="chart-box" id="chart-prod-pdr"></div>
+      </div>
+      <div class="chart-container">
+        <div class="chart-title">Production du jour de pointe</div>
+        <div class="chart-box" id="chart-prod-pointe"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE VENTES EN GROS ========== -->
+  <div class="page" id="page-ventes">
+    <h1>🚰 Ventes en gros détaillées</h1>
+    <div id="ventes-empty" class="empty-state" style="display:none;">
+      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    </div>
+    <div id="ventes-content" style="display:none;">
+      <div class="filter-bar">
+        <label>📅 Période :</label>
+        <select id="global-period-3" onchange="onPeriodChange()">
+          <option value="last_day">Dernier jour</option>
+          <option value="last_7">7 derniers jours</option>
+          <option value="last_30" selected>30 derniers jours</option>
+          <option value="last_60">60 derniers jours</option>
+          <option value="ytd">Année en cours</option>
+          <option value="last_12m">12 derniers mois</option>
+          <option value="prev_year">Année précédente</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+        <span class="period-range-label" id="period-range-label-3"></span>
+        <div class="custom-dates" id="custom-dates-3">
+          <label>Du :</label>
+          <input type="date" id="custom-start-3" onchange="onCustomDateChange()">
+          <label>Au :</label>
+          <input type="date" id="custom-end-3" onchange="onCustomDateChange()">
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Évolution des ventes en gros</div>
+        <div class="chart-box" id="chart-ventes"></div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Répartition des ventes en gros sur la période</div>
+        <div class="chart-box-sm" id="chart-ventes-pie"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE DÉBITS RÉSERVÉS ========== -->
+  <div class="page" id="page-debits">
+    <h1>🚱 Débits réservés</h1>
+    <div id="debits-empty" class="empty-state" style="display:none;">
+      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    </div>
+    <div id="debits-content" style="display:none;">
+      <div class="filter-bar">
+        <label>📅 Période :</label>
+        <select id="global-period-4" onchange="onPeriodChange()">
+          <option value="last_day">Dernier jour</option>
+          <option value="last_7">7 derniers jours</option>
+          <option value="last_30" selected>30 derniers jours</option>
+          <option value="last_60">60 derniers jours</option>
+          <option value="ytd">Année en cours</option>
+          <option value="last_12m">12 derniers mois</option>
+          <option value="prev_year">Année précédente</option>
+          <option value="custom">Personnalisé</option>
+        </select>
+        <span class="period-range-label" id="period-range-label-4"></span>
+        <div class="custom-dates" id="custom-dates-4">
+          <label>Du :</label>
+          <input type="date" id="custom-start-4" onchange="onCustomDateChange()">
+          <label>Au :</label>
+          <input type="date" id="custom-end-4" onchange="onCustomDateChange()">
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">Pont de Pégomas</div>
+        <div class="chart-box" id="chart-debits-pegomas"></div>
+      </div>
+
+      <div class="chart-container">
+        <div class="chart-title">La Siagne à Callian (Ajustadoux)</div>
+        <div class="chart-box" id="chart-debits-callian"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PAGE APP ========== -->
+  <div class="page" id="page-app">
+    <h1>⚙️ App</h1>
+    <div class="file-upload" onclick="document.getElementById('file-input').click()">
+      <div class="icon">📁</div>
+      <div class="text">Cliquez pour sélectionner un fichier Excel<br>du type PADRES données historiques<br>(.xlsx, .xlsm, .xls)</div>
+      <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls" onchange="handleFileSelect(event)">
+    </div>
+    <div id="app-success" class="success-msg" style="display:none;"></div>
+    <details class="diagnostic" id="diagnostic">
+      <summary>📋 Diagnostic de chargement</summary>
+      <div class="diagnostic-content" id="diagnostic-content"></div>
+    </details>
+    <details class="diagnostic" id="statiques">
+      <summary>📐 Paramètres statiques</summary>
+      <div class="diagnostic-content" id="statiques-content"></div>
+    </details>
+    <details class="diagnostic" id="mapping">
+      <summary>🗂️ Mapping des colonnes par catégorie</summary>
+      <div class="diagnostic-content" id="mapping-content"></div>
+    </details>
+  </div>
+
+</div>
+
+<script>
+/* ================================================================
+   PADRES - Application de visualisation
+   ================================================================ */
+
+// ---------- État global ----------
+let state = {
+  fileName: null,
+  filePath: null,
+  rawRows: null,
+  headers: null,
+  data: [],           // Données nettoyées : [{date, annee, mois, jourAnnee, ...cols}]
+  colMap: {},         // Mapping index colonne -> nom nettoyé
+  mappedCols: {},     // Mapping nom métier -> index colonne
+  period: 'last_30',
+  customStart: null,
+  customEnd: null,
+  cassienAllYears: [],
+  cassienYears: new Set(),
+  loaded: false
+};
+
+// ---------- Constantes colonnes ----------
+const COL = {
+  DATE: 0,
+  BARRAGE: 1,
+  FOUX_TOTAL: 2,
+  GREOLIERES_TOTAL: 3,
+  BRAMAFAN_TOTAL: 4,
+  STCEZ_DISPO: 5,
+  GREOLIERES_DISPO: 6,
+  BRAMAFAN_COPIE: 7,
+  STCEZ_PREL: 8,
+  FOUX_PREL: 9,
+  VEYANS_PREL: 10,
+  APIE_PREL: 11,
+  PDR1_PREL: 12,
+  PDR2_PREL: 13,
+  PDR7_PREL: 14,
+  GREOLIERES_ARRIVEE: 15,
+  BRAMAFAN_PREL: 16,
+  APIE_DISPO: 17,
+  PDR_DISPO: 18,
+  DEBIT_MIN_PEGOMAS: 19,
+  NARTASSIER: 20,
+  STJACQUES: 21,
+  CHATEAUNEUF: 22,
+  REF_ET_APIE: 23,
+  PROD_TOT_BV: 24,
+  BESOINS_PROPRES: 25,
+  SIEF: 26,
+  VALBONNE: 27,
+  CAP_ROUX: 28,
+  JACOURETS_PREL: 29,
+  DROIT_STCEZ: 30,
+  DROIT_FOUX: 31,
+  DROIT_JACOURETS: 32,
+  DROIT_VEYANS: 33,
+  DROIT_APIE: 34,
+  DROIT_PDR: 35,
+  DROIT_GREOLIERES_BRAMAFAN: 36,
+  DROIT_LOUP: 37,
+  COTE_CASSIEN: 38,
+  CAP_PDR: 39,
+  CAP_APIE: 40,
+  VEYANS_DISPO: 41,
+  DEBIT_MOYEN_PEGOMAS: 42,
+  DEBIT_ST_PEGOMAS: 43,
+  DEBIT_CALLIAN: 44
+};
+
+// ---------- Fonctions utilitaires ----------
+function cleanLabel(label) {
+  return String(label)
+    .replace(/^TONI\s+/i, "")
+    .replace(/\(C\)\s*/g, "")
+    .replace(/\(SM\)\s*/g, "")
+    .replace(/\(Via Idx\)\s*/gi, "")
+    .replace(/\(ViaIdx\)\s*/gi, "")
+    .replace(/\(Via Idx\+\)\s*/gi, "")
+    .replace(/\(viaDébit\)\s*/gi, "")
+    .replace(/\(Via Index\)\s*/gi, "")
+    .replace(/\(ORAi1\)\s*/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function fmtNum(v, decimals) {
+  if (v === null || v === undefined || isNaN(v)) return '—';
+  const d = decimals !== undefined ? decimals : 0;
+  return v.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return dd + '/' + mm + '/' + d.getFullYear();
+}
+
+// Format long français : "1er janvier 2026" / "16 juillet 2026"
+const MOIS_FR = [
+  'janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+  'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'
+];
+function fmtDateLong(d) {
+  if (!d) return '—';
+  const day = d.getDate();
+  const dayStr = day === 1 ? '1er' : String(day);
+  return dayStr + ' ' + MOIS_FR[d.getMonth()] + ' ' + d.getFullYear();
+}
+
+function parseExcelDate(serial) {
+  // Convertit un serial Excel en objet Date (ignore l'heure)
+  if (typeof serial === 'string' || typeof serial === 'object') {
+    const d = new Date(serial);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof serial !== 'number' || serial < 20000 || serial > 60000) return null;
+  const d = XLSX.SSF.parse_date_code(serial);
+  if (!d) return null;
+  // Vérifier que les composants sont valides (Safari peut retourner NaN)
+  if (isNaN(d.y) || isNaN(d.m) || isNaN(d.d)) return null;
+  const date = new Date(d.y, d.m - 1, d.d);
+  // Vérifier que la Date est valide (getTime() !== NaN)
+  return isNaN(date.getTime()) ? null : date;
+}
+
+function num(v) {
+  if (v === null || v === undefined || v === '') return 0;
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+// ---------- Navigation ----------
+function showPage(pageName) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + pageName).classList.add('active');
+  document.querySelector('.nav-item[data-page="' + pageName + '"]').classList.add('active');
+  // Re-render la page si des données sont chargées
+  if (state.loaded) {
+    updatePeriodRangeLabels();
+    if (pageName === 'dashboard') renderDashboard();
+    if (pageName === 'ressources') renderRessources();
+    if (pageName === 'production') renderProduction();
+    if (pageName === 'debits') renderDebits();
+    if (pageName === 'ventes') renderVentes();
+  }
+}
+
+// ---------- Filtre de période ----------
+function syncPeriodSelects() {
+  const val = state.period;
+  ['global-period', 'global-period-2', 'global-period-3', 'global-period-4', 'global-period-5'].forEach(id => {
+    document.getElementById(id).value = val;
+  });
+  const showCustom = val === 'custom';
+  ['custom-dates', 'custom-dates-2', 'custom-dates-3', 'custom-dates-4', 'custom-dates-5'].forEach(id => {
+    document.getElementById(id).classList.toggle('show', showCustom);
+  });
+  if (state.customStart) {
+    const iso = state.customStart.toISOString().split('T')[0];
+    ['custom-start', 'custom-start-2', 'custom-start-3', 'custom-start-4', 'custom-start-5'].forEach(id => {
+      document.getElementById(id).value = iso;
+    });
+  }
+  if (state.customEnd) {
+    const iso = state.customEnd.toISOString().split('T')[0];
+    ['custom-end', 'custom-end-2', 'custom-end-3', 'custom-end-4', 'custom-end-5'].forEach(id => {
+      document.getElementById(id).value = iso;
+    });
+  }
+  updatePeriodRangeLabels();
+}
+
+// Affiche "du … au …" à droite du sélecteur de période (toutes les pages)
+function updatePeriodRangeLabels() {
+  const ids = [
+    'period-range-label',
+    'period-range-label-2',
+    'period-range-label-3',
+    'period-range-label-4',
+    'period-range-label-5'
+  ];
+  let text = '';
+  if (state.loaded) {
+    const range = getPeriodRange();
+    if (range && range.start && range.end) {
+      text = '➜ du ' + fmtDateLong(range.start) + ' au ' + fmtDateLong(range.end);
+    }
+  }
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  });
+}
+
+function onPeriodChange() {
+  // Trouver le select actif
+  const activePage = document.querySelector('.page.active').id;
+  let selectId = 'global-period';
+  if (activePage === 'page-ressources') selectId = 'global-period-2';
+  if (activePage === 'page-ventes') selectId = 'global-period-3';
+  if (activePage === 'page-debits') selectId = 'global-period-4';
+  if (activePage === 'page-production') selectId = 'global-period-5';
+  state.period = document.getElementById(selectId).value;
+  syncPeriodSelects();
+  renderCurrentPage();
+}
+
+function onCustomDateChange() {
+  const activePage = document.querySelector('.page.active').id;
+  let startId = 'custom-start', endId = 'custom-end';
+  if (activePage === 'page-ressources') { startId = 'custom-start-2'; endId = 'custom-end-2'; }
+  if (activePage === 'page-ventes') { startId = 'custom-start-3'; endId = 'custom-end-3'; }
+  if (activePage === 'page-debits') { startId = 'custom-start-4'; endId = 'custom-end-4'; }
+  if (activePage === 'page-production') { startId = 'custom-start-5'; endId = 'custom-end-5'; }
+  const s = document.getElementById(startId).value;
+  const e = document.getElementById(endId).value;
+  if (s) state.customStart = new Date(s + 'T00:00:00');
+  if (e) state.customEnd = new Date(e + 'T00:00:00');
+  updatePeriodRangeLabels();
+  renderCurrentPage();
+}
+
+
+function renderCurrentPage() {
+  const activePage = document.querySelector('.page.active').id;
+  if (activePage === 'page-dashboard') renderDashboard();
+  if (activePage === 'page-ressources') renderRessources();
+  if (activePage === 'page-debits') renderDebits();
+  if (activePage === 'page-production') renderProduction();
+  if (activePage === 'page-ventes') renderVentes();
+}
+
+function getPeriodRange() {
+  if (!state.loaded || state.data.length === 0) return null;
+  let minTime = Infinity, maxTime = -Infinity;
+  for (const d of state.data) {
+    const t = d.time !== undefined ? d.time : d.date.getTime();
+    if (isNaN(t)) continue; // ignorer les dates invalides
+    if (t < minTime) minTime = t;
+    if (t > maxTime) maxTime = t;
+  }
+  // Aucune date valide dans les données
+  if (minTime === Infinity || maxTime === -Infinity) {
+    console.error('[PADRES] getPeriodRange() : AUCUNE date valide. Exemple time stocké :', state.data[0]?.time, ', date:', state.data[0]?.date?.toString());
+    return null;
+  }
+  const minDate = new Date(minTime);
+  const maxDate = new Date(maxTime);
+  const today = new Date(maxDate);
+  today.setHours(23, 59, 59, 999);
+
+  let start = null, end = null;
+  switch (state.period) {
+    case 'last_day':
+      start = new Date(today); start.setHours(0,0,0,0);
+      end = new Date(today);
+      break;
+    case 'last_7': {
+      start = new Date(today); start.setDate(start.getDate() - 6); start.setHours(0,0,0,0);
+      end = new Date(today);
+      break;
+    }
+    case 'last_30': {
+      start = new Date(today); start.setDate(start.getDate() - 29); start.setHours(0,0,0,0);
+      end = new Date(today);
+      break;
+    }
+    case 'last_60': {
+      start = new Date(today); start.setDate(start.getDate() - 59); start.setHours(0,0,0,0);
+      end = new Date(today);
+      break;
+    }
+    case 'ytd': {
+      start = new Date(today.getFullYear(), 0, 1);
+      end = new Date(today);
+      break;
+    }
+    case 'last_12m': {
+      start = new Date(today); start.setFullYear(start.getFullYear() - 1); start.setDate(start.getDate() + 1); start.setHours(0,0,0,0);
+      end = new Date(today);
+      break;
+    }
+    case 'prev_year': {
+      start = new Date(today.getFullYear() - 1, 0, 1);
+      end = new Date(today.getFullYear() - 1, 11, 31, 23, 59, 59);
+      break;
+    }
+    case 'custom':
+      // Si les dates personnalisées ne sont pas définies, utiliser les bornes des données
+      if (state.customStart) {
+        start = new Date(state.customStart);
+        start.setHours(0,0,0,0);
+      } else {
+        start = new Date(minDate);
+      }
+      if (state.customEnd) {
+        end = new Date(state.customEnd);
+        end.setHours(23,59,59,999);
+      } else {
+        end = new Date(maxDate);
+      }
+      break;
+  }
+  if (!start || !end) return null;
+  // Clamp aux données disponibles
+  if (start < minDate) start = new Date(minDate);
+  if (end > maxDate) end = new Date(maxDate);
+  console.log('[PADRES] getPeriodRange() : period=' + state.period +
+    ', data.length=' + state.data.length +
+    ', minTime=' + minTime + ' (' + minDate.toISOString() + ')' +
+    ', maxTime=' + maxTime + ' (' + maxDate.toISOString() + ')' +
+    ', start=' + start.toISOString() + '(' + start.getTime() + ')' +
+    ', end=' + end.toISOString() + '(' + end.getTime() + ')');
+  return { start, end };
+}
+
+function filterDataByPeriod() {
+  const range = getPeriodRange();
+  if (!range) return [];
+  const result = state.data.filter(d => {
+    const t = d.time !== undefined ? d.time : d.date.getTime();
+    return t >= range.start.getTime() && t <= range.end.getTime();
+  });
+  console.log('[PADRES] filterDataByPeriod() : filtered=' + result.length + ' sur ' + state.data.length);
+  return result;
+}
+
+// ---------- Chargement du fichier ----------
+async function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  await loadFile(file);
+}
+
+async function loadFile(file) {
+  try {
+    console.log('[PADRES] Chargement du fichier :', file.name);
+    const originalBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(originalBuffer);
+    console.log('[PADRES] Taille du fichier (octets) :', bytes.length);
+    const bytesForRead = new Uint8Array(bytes); // copie indépendante
+    const workbook = XLSX.read(bytesForRead, { type: "array" });
+    // Vérifier que le classeur contient des feuilles
+    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+      console.error('[PADRES] Classeur vide ou invalide');
+      showFormatError();
+      return;
+    }
+    const sheetName = workbook.SheetNames.includes("data") ? "data" : workbook.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
+    const filePath = typeof file.path === 'string' && file.path.length > 0 ? file.path : file.name;
+    const success = processData(rows, file.name, filePath);
+    if (success) {
+      // Sauvegarder pour rechargement (Blob : format le plus fiable pour IndexedDB)
+      saveFileForReload(file, new Blob([new Uint8Array(bytes)]));
+    } else {
+      showFormatError();
+    }
+  } catch (e) {
+    console.error('[PADRES] Erreur lors de la lecture :', e);
+    alert('Erreur lors de la lecture du fichier : ' + e.message);
+  }
+}
+
+// ---------- Persistance (IndexedDB) ----------
+function saveFileForReload(file, blob) {
+  try {
+    localStorage.setItem('padres_file_name', file.name);
+    const filePath = typeof file.path === 'string' && file.path.length > 0 ? file.path : file.name;
+    localStorage.setItem('padres_file_path', filePath);
+    const req = indexedDB.open('padres_db', 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('files')) {
+        db.createObjectStore('files');
+      }
+    };
+    req.onsuccess = (e) => {
+      const db = e.target.result;
+      const tx = db.transaction('files', 'readwrite');
+      tx.objectStore('files').put(blob, 'last_file');
+      tx.oncomplete = () => {
+        console.log('[PADRES] Fichier sauvegardé dans IndexedDB (Blob)');
+        db.close();
+      };
+    };
+  } catch (e) {
+    console.warn('[PADRES] Sauvegarde impossible :', e);
+  }
+}
+
+// Nettoie le cache IndexedDB s'il est corrompu
+function clearReloadCache() {
+  try {
+    localStorage.removeItem('padres_file_name');
+    localStorage.removeItem('padres_file_path');
+    const req = indexedDB.open('padres_db', 1);
+    req.onsuccess = (e) => {
+      const db = e.target.result;
+      if (db.objectStoreNames.contains('files')) {
+        const tx = db.transaction('files', 'readwrite');
+        tx.objectStore('files').delete('last_file');
+        tx.oncomplete = () => {
+          console.warn('[PADRES] Cache IndexedDB nettoyé (fichier corrompu supprimé)');
+          db.close();
+        };
+      } else {
+        db.close();
+      }
+    };
+  } catch (e) {
+    console.warn('[PADRES] Nettoyage du cache impossible :', e);
+  }
+}
+
+async function tryReloadLastFile() {
+  const fileName = localStorage.getItem('padres_file_name');
+  if (!fileName) return false;
+  console.log('[PADRES] Tentative de rechargement automatique de :', fileName);
+  try {
+    const storedData = await new Promise((resolve, reject) => {
+      const req = indexedDB.open('padres_db', 1);
+      req.onerror = () => reject(new Error('IndexedDB error'));
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction('files', 'readonly');
+        const getReq = tx.objectStore('files').get('last_file');
+        getReq.onsuccess = () => {
+          db.close();
+          if (getReq.result) resolve(getReq.result);
+          else reject(new Error('No file'));
+        };
+        getReq.onerror = () => reject(new Error('Get error'));
+      };
+    });
+    if (!storedData) {
+      console.warn('[PADRES] Aucune donnée en cache');
+      return false;
+    }
+
+    // Obtenir les octets depuis le Blob stocké (ou migrer depuis l'ancien format)
+    let bytes;
+    if (storedData instanceof Blob) {
+      console.log('[PADRES] Format Blob détecté, taille :', storedData.size);
+      const buf = await storedData.arrayBuffer();
+      bytes = new Uint8Array(buf);
+    } else if (storedData instanceof Uint8Array) {
+      console.warn('[PADRES] Ancien format Uint8Array détecté, migration vers Blob');
+      bytes = new Uint8Array(storedData);
+    } else if (storedData instanceof ArrayBuffer) {
+      console.warn('[PADRES] Ancien format ArrayBuffer détecté, migration vers Blob');
+      bytes = new Uint8Array(storedData);
+    } else if (storedData && storedData.buffer instanceof ArrayBuffer) {
+      console.warn('[PADRES] Ancien format TypedArray détecté, migration vers Blob');
+      bytes = new Uint8Array(storedData.buffer, storedData.byteOffset, storedData.byteLength);
+    } else {
+      console.error('[PADRES] Format de données en cache non reconnu :', typeof storedData);
+      clearReloadCache();
+      return false;
+    }
+
+    if (bytes.length === 0) {
+      console.error('[PADRES] Fichier en cache vide, rechargement impossible');
+      clearReloadCache();
+      return false;
+    }
+
+    const filePath = localStorage.getItem('padres_file_path') || fileName;
+    const workbook = XLSX.read(new Uint8Array(bytes), { type: "array" });
+    if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
+      console.error('[PADRES] Classeur vide en cache, rechargement impossible');
+      clearReloadCache();
+      return false;
+    }
+    const sheetName = workbook.SheetNames.includes("data") ? "data" : workbook.SheetNames[0];
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
+    const success = processData(rows, fileName, filePath);
+    if (success) {
+      console.log('[PADRES] Rechargement automatique réussi :', fileName);
+    } else {
+      console.error('[PADRES] Rechargement automatique échoué (validation des données)');
+      clearReloadCache();
+    }
+    return success;
+  } catch (e) {
+    console.error('[PADRES] Rechargement impossible :', e);
+    clearReloadCache();
+    return false;
+  }
+}
+
+// ---------- Traitement des données ----------
+function processData(rows, fileName, filePath) {
+  // En-têtes ligne 2 (index 1)
+  const headers = rows[1] || [];
+  const colMap = {};
+  const mappedCols = {};
+  headers.forEach((h, i) => {
+    if (h !== null && h !== undefined && String(h).trim() !== '') {
+      let clean;
+      if (i === 0) {
+        // La colonne 0 est la date : forcer le libellé "Date"
+        clean = "Date";
+      } else {
+        clean = cleanLabel(h);
+      }
+      colMap[i] = clean;
+    }
+  });
+
+  // Validation : au moins 40 colonnes mappées et 1000 lignes de données
+  if (Object.keys(colMap).length < 40) {
+    return false;
+  }
+  let dataRowCount = 0;
+  for (let i = 4; i < rows.length; i++) {
+    const row = rows[i];
+    if (row && row.length > 0 && row[0] !== null && row[0] !== undefined && row[0] !== '') {
+      dataRowCount++;
+    }
+  }
+  if (dataRowCount < 1000) {
+    return false;
+  }
+
+  // Nettoyage des données à partir de la ligne 5 (index 4)
+  const cleaned = [];
+  let invalidDateCount = 0;
+  let firstValidDate = null;
+  let lastValidDate = null;
+  for (let i = 4; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length === 0) continue;
+    const date = parseExcelDate(row[0]);
+    if (!date || isNaN(date.getTime())) {
+      if (row[0] !== null && row[0] !== undefined && row[0] !== '') invalidDateCount++;
+      continue;
+    }
+    if (firstValidDate === null) firstValidDate = date;
+    lastValidDate = date;
+
+    // Vérifier que les deux premières colonnes métier après la date sont renseignées
+    const v1 = row[1], v2 = row[2];
+    if ((v1 === null || v1 === undefined || v1 === '') && (v2 === null || v2 === undefined || v2 === '')) continue;
+
+    // Vérifier si toutes les colonnes métier sont vides
+    let hasAny = false;
+    for (let c = 1; c < row.length; c++) {
+      if (row[c] !== null && row[c] !== undefined && row[c] !== '') { hasAny = true; break; }
+    }
+    if (!hasAny) continue;
+
+    // Vérifier si toutes les valeurs métier sont zéro
+    let hasNonZero = false;
+    for (let c = 1; c < row.length; c++) {
+      const n = num(row[c]);
+      if (n !== 0) { hasNonZero = true; break; }
+    }
+    if (!hasNonZero) continue;
+
+    const record = {
+      time: date.getTime(),  // timestamp numérique (fiable sur tous navigateurs)
+      date: date,            // objet Date pour l'affichage
+      annee: date.getFullYear(),
+      mois: date.getMonth() + 1,
+      jourAnnee: Math.floor((date - new Date(date.getFullYear(), 0, 0)) / 86400000),
+      values: {}
+    };
+    for (let c = 1; c < row.length; c++) {
+      record.values[c] = num(row[c]);
+    }
+    cleaned.push(record);
+  }
+
+  console.log('[PADRES] Lignes nettoyées :', cleaned.length);
+  console.log('[PADRES] Dates invalides ignorées :', invalidDateCount);
+  console.log('[PADRES] Première date valide :', firstValidDate ? firstValidDate.toISOString() : 'AUCUNE');
+  console.log('[PADRES] Dernière date valide :', lastValidDate ? lastValidDate.toISOString() : 'AUCUNE');
+
+  // Tri par date croissante (timestamp numérique fiable sur tous navigateurs)
+  cleaned.sort((a, b) => a.time - b.time);
+
+  // Vérifier que les données nettoyées sont suffisantes (≥ 1000 lignes)
+  if (cleaned.length < 1000) {
+    console.error('[PADRES] Données nettoyées insuffisantes (< 1000 lignes) :', cleaned.length);
+    return false;
+  }
+
+  state.fileName = fileName;
+  state.filePath = filePath || fileName;
+  state.rawRows = rows;
+  state.headers = headers;
+  state.colMap = colMap;
+  state.mappedCols = mappedCols;
+  state.data = cleaned;
+  state.loaded = true;
+  // Afficher les bornes de période dès le premier chargement
+  updatePeriodRangeLabels();
+
+  // Initialiser les années pour le lac
+  state.cassienAllYears = [];
+  state.cassienYears = new Set();
+  cleaned.forEach(d => {
+    if (d.values[COL.COTE_CASSIEN] !== undefined && d.values[COL.COTE_CASSIEN] > 0) {
+      if (!state.cassienAllYears.includes(d.annee)) {
+        state.cassienAllYears.push(d.annee);
+      }
+      state.cassienYears.add(d.annee);
+    }
+  });
+  state.cassienAllYears.sort((a, b) => a - b);
+
+  updateAppPage();
+  showPage('dashboard');
+  return true;
+}
+
+function showFormatError() {
+  // Réinitialiser l'état
+  state.loaded = false;
+  state.data = [];
+  state.colMap = {};
+  state.fileName = null;
+  state.filePath = null;
+
+  // Afficher l'erreur dans la page App
+  const success = document.getElementById('app-success');
+  success.style.display = 'block';
+  success.style.background = '#f8d7da';
+  success.style.color = '#721c24';
+  success.style.border = '1px solid #f5c6cb';
+  success.textContent = '❌ Erreur de format : le fichier sélectionné ne semble pas être un fichier PADRES données historiques valide.';
+
+  const info = document.getElementById('app-info');
+  info.innerHTML = '';
+
+  // Afficher les états vides
+  document.getElementById('dashboard-empty').style.display = 'block';
+  document.getElementById('ressources-empty').style.display = 'block';
+  document.getElementById('debits-empty').style.display = 'block';
+  document.getElementById('ventes-empty').style.display = 'block';
+  document.getElementById('dashboard-content').style.display = 'none';
+  document.getElementById('ressources-content').style.display = 'none';
+  document.getElementById('debits-content').style.display = 'none';
+  document.getElementById('ventes-content').style.display = 'none';
+
+  // Aller à la page App
+  showPage('app');
+}
+
+// ---------- Calculs métier ----------
+// Plafond par usine (m³/j) : au-delà = valeur aberrante (ex. index cumulé saisi par erreur)
+// Capacités théoriques max ~57 000 ; on tolère une marge large à 200 000 m³/j
+const MAX_PROD_USINE = 200000;
+
+function saneProdValue(v) {
+  const n = Number(v) || 0;
+  // Exclure les valeurs négatives et les outliers (ex. 57 182 760 le 29/12/2016 à Nartassier)
+  if (n < 0 || n > MAX_PROD_USINE) return 0;
+  return n;
+}
+
+function getProduction(d) {
+  return saneProdValue(d.values[COL.NARTASSIER]) +
+         saneProdValue(d.values[COL.STJACQUES]) +
+         saneProdValue(d.values[COL.CHATEAUNEUF]) +
+         saneProdValue(d.values[COL.REF_ET_APIE]) +
+         saneProdValue(d.values[COL.PROD_TOT_BV]);
+}
+
+function getVEG(d) {
+  return (d.values[COL.SIEF] || 0) + (d.values[COL.VALBONNE] || 0) + (d.values[COL.CAP_ROUX] || 0);
+}
+
+function getDistribution(d) {
+  return getVEG(d) + (d.values[COL.BESOINS_PROPRES] || 0);
+}
+
+// Compléments disponibles par ressource
+function getComplements(d) {
+  const res = {};
+  const date = new Date(d.time);
+  const monthDay = (date.getMonth() + 1) * 100 + date.getDate();
+
+  // 1. St Cézaire
+  {
+    const D = d.values[COL.STCEZ_DISPO] || 0;
+    const J = d.values[COL.DROIT_STCEZ] || Infinity;
+    const P = d.values[COL.STCEZ_PREL] || 0;
+    const V = Math.min(Math.max(0, D), J);
+    res.stcez = V - P;
+  }
+  // 2. Foux
+  {
+    const D = d.values[COL.FOUX_TOTAL] || 0;
+    const J = d.values[COL.DROIT_FOUX] || Infinity;
+    const P = d.values[COL.FOUX_PREL] || 0;
+    const V = Math.min(Math.max(0, D), J);
+    res.foux = V - P;
+  }
+  // 3. Gréolières
+  {
+    const D = d.values[COL.GREOLIERES_DISPO] || 0;
+    const J = d.values[COL.DROIT_GREOLIERES_BRAMAFAN] || Infinity;
+    const P = d.values[COL.GREOLIERES_TOTAL] || 0;
+    const V = Math.min(Math.max(0, D), J);
+    res.greolieres = V - P;
+  }
+  // 4. Bramafan
+  {
+    const D = d.values[COL.BRAMAFAN_TOTAL] || 0;
+    const J = d.values[COL.DROIT_GREOLIERES_BRAMAFAN] || Infinity;
+    const P = d.values[COL.BRAMAFAN_PREL] || 0;
+    const V = Math.min(Math.max(0, D), J);
+    res.bramafan = V - P;
+  }
+  // 5. Veyans
+  {
+    // D = 30000 du 15/07 au 14/10, sinon 0
+    let D = 0;
+    if (monthDay >= 715 && monthDay <= 1014) D = 30000;
+    const J = d.values[COL.DROIT_VEYANS] || Infinity;
+    const P = d.values[COL.VEYANS_PREL] || 0;
+    const V = Math.min(Math.max(0, D), J);
+    res.veyans = V - P;
+  }
+  // 6. APIE : C = MAX(0; D - P), sans limitation J
+  {
+    const D = d.values[COL.APIE_DISPO] || 0;
+    const P = d.values[COL.APIE_PREL] || 0;
+    res.apie = Math.max(0, D - P);
+  }
+  // 7. PDR : D = 80000 du 01/04 au 14/10, sinon 43200
+  {
+    let D = 43200;
+    if (monthDay >= 401 && monthDay <= 1014) D = 80000;
+    const J = d.values[COL.DROIT_PDR] || Infinity;
+    const P = (d.values[COL.PDR1_PREL] || 0) + (d.values[COL.PDR2_PREL] || 0) + (d.values[COL.PDR7_PREL] || 0);
+    const V = Math.min(Math.max(0, D), J);
+    res.pdr = V - P;
+  }
+  // 8. Jacourets
+  {
+    const D = d.values[COL.DROIT_JACOURETS] || 0;
+    const J = d.values[COL.DROIT_JACOURETS] || Infinity;
+    const P = d.values[COL.JACOURETS_PREL] || 0;
+    const V = Math.min(Math.max(0, D), J);
+    res.jacourets = V - P;
+  }
+  return res;
+}
+
+function getPrelevements(d) {
+  return {
+    stcez: d.values[COL.STCEZ_PREL] || 0,
+    foux: d.values[COL.FOUX_PREL] || 0,
+    veyans: d.values[COL.VEYANS_PREL] || 0,
+    apie: d.values[COL.APIE_PREL] || 0,
+    pdr: (d.values[COL.PDR1_PREL] || 0) + (d.values[COL.PDR2_PREL] || 0) + (d.values[COL.PDR7_PREL] || 0),
+    bramafan: d.values[COL.BRAMAFAN_PREL] || 0,
+    jacourets: d.values[COL.JACOURETS_PREL] || 0
+  };
+}
+
+// ---------- Lac de Saint-Cassien ----------
+function coteToVolume(cote) {
+  const x = cote;
+  const V = 0.001586592054 * Math.pow(x, 3) - 0.6006702028 * Math.pow(x, 2) + 77.42098071 * x - 3415.762614;
+  return Math.max(0, V * 1000000);
+}
+
+// ---------- Rendu : Tableau de bord ----------
+function renderDashboard() {
+  const filtered = filterDataByPeriod();
+  if (filtered.length === 0) {
+    console.error('[PADRES] renderDashboard() : AUCUNE donnée dans la période. data.length=' + state.data.length);
+    document.getElementById('dashboard-content').style.display = 'none';
+    document.getElementById('dashboard-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('dashboard-content').style.display = 'block';
+  document.getElementById('dashboard-empty').style.display = 'none';
+
+  // KPI — "Mesure la plus récente" = dernière date du fichier (pas de la période filtrée)
+  const fileLatest = state.data[state.data.length - 1];
+  const prodTotal = filtered.reduce((s, d) => s + getProduction(d), 0);
+  const vegTotal = filtered.reduce((s, d) => s + getVEG(d), 0);
+  const nbDays = filtered.length;
+
+  document.getElementById('kpi-latest').textContent = fmtDate(new Date(fileLatest.time));
+  document.getElementById('kpi-latest-date').textContent = '';
+  document.getElementById('kpi-prod-total').textContent = fmtNum(prodTotal) + ' m³';
+  document.getElementById('kpi-prod-avg').textContent = nbDays > 1 ? 'Moyenne : ' + fmtNum(prodTotal / nbDays) + ' m³/j' : '';
+  document.getElementById('kpi-veg-total').textContent = fmtNum(vegTotal) + ' m³';
+  document.getElementById('kpi-veg-avg').textContent = nbDays > 1 ? 'Moyenne : ' + fmtNum(vegTotal / nbDays) + ' m³/j' : '';
+
+  // Graphique production + VEG (lignes avec aires colorées)
+  const dates = filtered.map(d => new Date(d.time));
+  const prod = filtered.map(d => getProduction(d));
+  const veg = filtered.map(d => getVEG(d));
+
+  // Pointe de production
+  let maxProd = -Infinity, maxIdx = -1;
+  prod.forEach((v, i) => { if (v > maxProd) { maxProd = v; maxIdx = i; } });
+
+  const traceProd = {
+    x: dates, y: prod, name: 'Total production SICASIL',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#1f77b4', width: 2 },  // même bleu que la page Production
+    fill: 'tozeroy',
+    fillcolor: 'rgba(31,119,180,0.25)'     // aire bleu semi-transparent
+  };
+  const traceVeg = {
+    x: dates, y: veg, name: 'Total VEG SICASIL',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#1f77b4', width: 2 },  // même bleu que la ligne production
+    fill: 'tozeroy',
+    fillcolor: 'rgba(31,119,180,0.45)'     // aire bleu plus foncée (entre ligne et aire production)
+  };
+  const tracePointe = {
+    x: [dates[maxIdx]], y: [maxProd], name: 'Production pointe',
+    type: 'scatter', mode: 'markers+text',
+    marker: { color: '#d62728', size: 14, line: { color: 'white', width: 2 } },
+    text: [fmtNum(maxProd)],
+    textposition: 'top center',
+    textfont: { size: 11, color: '#d62728' }
+  };
+
+  const layoutProd = {
+    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    yaxis: { title: 'Volume (m³)' },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-production', [traceProd, traceVeg, tracePointe], layoutProd, { responsive: true, displayModeBar: false });
+
+  // Histogramme empilé prélèvements / compléments
+  renderPrelevements();
+}
+
+function renderPrelevements() {
+  const filtered = filterDataByPeriod();
+  if (filtered.length === 0) return;
+  const mode = document.getElementById('prelev-mode').value;
+
+  const dates = filtered.map(d => new Date(d.time));
+  const prels = filtered.map(d => getPrelevements(d));
+  const comps = filtered.map(d => getComplements(d));
+
+  const prelTotal = prels.map(p => p.stcez + p.foux + p.veyans + p.apie + p.pdr + p.bramafan + p.jacourets);
+  const compTotal = comps.map(c => c.stcez + c.foux + c.greolieres + c.bramafan + c.veyans + c.apie + c.pdr + c.jacourets);
+
+  let yPrel, yComp, yTitle;
+  if (mode === 'normalized') {
+    yPrel = prelTotal.map((v, i) => {
+      const total = v + compTotal[i];
+      return total > 0 ? (v / total) * 100 : 0;
+    });
+    yComp = compTotal.map((v, i) => {
+      const total = prelTotal[i] + v;
+      return total > 0 ? (v / total) * 100 : 0;
+    });
+    yTitle = 'Pourcentage (%)';
+  } else {
+    yPrel = prelTotal;
+    yComp = compTotal;
+    yTitle = 'Volume (m³)';
+  }
+
+  const hoverPrel = mode === 'normalized'
+    ? '%{x|%d/%m/%Y}<br>Prélèvements : %{customdata[0]:,.0f} m³ (%{y:.1f}%)<extra></extra>'
+    : '%{x|%d/%m/%Y}<br>Prélèvements : %{y:,.0f} m³<extra></extra>';
+  const hoverComp = mode === 'normalized'
+    ? '%{x|%d/%m/%Y}<br>Compléments : %{customdata[1]:,.0f} m³ (%{y:.1f}%)<extra></extra>'
+    : '%{x|%d/%m/%Y}<br>Compléments : %{y:,.0f} m³<extra></extra>';
+
+  const tracePrel = {
+    x: dates, y: yPrel, name: 'Prélèvements',
+    type: 'bar',
+    marker: { color: '#c0392b' },
+    customdata: filtered.map((d, i) => [prelTotal[i], compTotal[i]]),
+    hovertemplate: hoverPrel
+  };
+  const traceComp = {
+    x: dates, y: yComp, name: 'Compléments disponibles',
+    type: 'bar',
+    marker: { color: '#3498db' },
+    customdata: filtered.map((d, i) => [prelTotal[i], compTotal[i]]),
+    hovertemplate: hoverComp
+  };
+
+  const layout = {
+    barmode: 'stack',
+    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    yaxis: { title: yTitle, range: mode === 'normalized' ? [0, 100] : undefined },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-prelevements', [tracePrel, traceComp], layout, { responsive: true, displayModeBar: false });
+}
+
+// ---------- Rendu : Ressources ----------
+function renderRessources() {
+  const filtered = filterDataByPeriod();
+  if (filtered.length === 0) {
+    document.getElementById('ressources-content').style.display = 'none';
+    document.getElementById('ressources-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('ressources-content').style.display = 'block';
+  document.getElementById('ressources-empty').style.display = 'none';
+
+  const dates = filtered.map(d => new Date(d.time));
+
+  // Disponibilité détaillée
+  const traces = [
+    { key: COL.STCEZ_DISPO, name: 'Barrage + Canal St-Cézaire', color: '#1f77b4' },
+    { key: COL.FOUX_TOTAL, name: 'Foux de St-Cézaire', color: '#87ceeb' },
+    { key: COL.GREOLIERES_DISPO, name: 'Sources de Gréolières', color: '#d62728' },
+    { key: COL.BRAMAFAN_TOTAL, name: 'Bramafan', color: '#e91e8c' },
+    { key: COL.JACOURETS_PREL, name: 'Jacourets', color: '#2ca02c' }
+  ];
+
+  const dataTraces = traces.map(t => ({
+    x: dates,
+    y: filtered.map(d => d.values[t.key] || 0),
+    name: t.name,
+    type: 'scatter',
+    mode: 'lines',
+    line: { color: t.color, width: 2 }
+  }));
+
+  const layoutRes = {
+    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    yaxis: { title: 'Volume (m³)' },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-ressources', dataTraces, layoutRes, { responsive: true, displayModeBar: false });
+
+  // Camembert répartition
+  const totals = traces.map(t => {
+    return filtered.reduce((s, d) => s + (d.values[t.key] || 0), 0);
+  });
+  const pieTrace = {
+    labels: traces.map(t => t.name),
+    values: totals,
+    type: 'pie',
+    marker: { colors: traces.map(t => t.color) },
+    textinfo: 'label+percent',
+    hovertemplate: '%{label}<br>%{value:,.0f} m³ (%{percent})<extra></extra>'
+  };
+  const layoutPie = {
+    margin: { t: 20, r: 20, b: 20, l: 20 },
+    showlegend: true
+  };
+  Plotly.react('chart-ressources-pie', [pieTrace], layoutPie, { responsive: true, displayModeBar: false });
+
+  // Tableau des volumes
+  const tableHtml = '<thead><tr><th>Ressource</th><th>Volume total (m³)</th><th>Volume moyen (m³/j)</th></tr></thead><tbody>' +
+    traces.map((t, i) => {
+      const total = totals[i];
+      const avg = total / filtered.length;
+      return '<tr><td>' + t.name + '</td><td>' + fmtNum(total) + '</td><td>' + fmtNum(avg) + '</td></tr>';
+    }).join('') + '</tbody>';
+  document.getElementById('table-ressources').innerHTML = tableHtml;
+
+  // Lac de Saint-Cassien
+  renderCassien();
+}
+
+function renderCassien() {
+  // Utilise tout l'historique, pas le filtre global
+  const allData = state.data.filter(d => d.values[COL.COTE_CASSIEN] !== undefined && d.values[COL.COTE_CASSIEN] > 0);
+  if (allData.length === 0) {
+    document.getElementById('chart-cassien').innerHTML = '<div style="text-align:center;color:#888;padding:40px;">Aucune donnée de côte St-Cassien disponible</div>';
+    return;
+  }
+
+  const years = [...state.cassienAllYears].sort();
+  const latestYear = Math.max(...years);
+
+  // Sélecteur d'années
+  const yearSel = document.getElementById('cassien-years');
+  yearSel.innerHTML = '';
+  years.forEach(y => {
+    const label = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.value = y;
+    cb.checked = state.cassienYears.has(y);
+    cb.onchange = () => {
+      if (cb.checked) state.cassienYears.add(y);
+      else state.cassienYears.delete(y);
+      renderCassien();
+    };
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(' ' + y));
+    yearSel.appendChild(label);
+  });
+
+  // Construire les traces par année
+  const traces = [];
+  const selectedYears = years.filter(y => state.cassienYears.has(y));
+
+  // Lignes de référence
+  const refRetenue = coteToVolume(147.35);
+  const refMinExpl = coteToVolume(138.50);
+
+  traces.push({
+    x: [new Date(2020, 0, 1), new Date(2020, 11, 31)],
+    y: [refRetenue, refRetenue],
+    name: 'Retenue normale',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#888', width: 1.5, dash: 'dot' }
+  });
+  traces.push({
+    x: [new Date(2020, 0, 1), new Date(2020, 11, 31)],
+    y: [refMinExpl, refMinExpl],
+    name: 'Minimum exploitation',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#888', width: 1.5, dash: 'dot' }
+  });
+  traces.push({
+    x: [new Date(2020, 0, 1), new Date(2020, 11, 31)],
+    y: [20000000, 20000000],
+    name: '',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#aaa', width: 1, dash: 'dot' },
+    showlegend: false
+  });
+  traces.push({
+    x: [new Date(2020, 6, 1), new Date(2020, 6, 1)],
+    y: [0, Math.max(refRetenue * 1.05, 20000000 * 1.05)],
+    name: '1er juillet',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#888', width: 1.5, dash: 'dot' }
+  });
+
+  // Palette de couleurs pour différencier les années
+  const palette = [
+    '#1f77b4', '#d62728', '#2ca02c', '#ff7f0e', '#9467bd',
+    '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+    '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5'
+  ];
+
+  selectedYears.forEach((y) => {
+    const yearData = allData.filter(d => d.annee === y);
+    if (yearData.length === 0) return;
+    // Année virtuelle : utiliser 2020 (année bissextile) comme référence
+    const x = yearData.map(d => {
+      const dt = new Date(d.time);
+      const vd = new Date(2020, dt.getMonth(), dt.getDate());
+      return vd;
+    });
+    const yVals = yearData.map(d => coteToVolume(d.values[COL.COTE_CASSIEN]));
+    const isLatest = y === latestYear;
+    // Couleur stable : index dans cassienAllYears (liste fixe), pas dans selectedYears
+    const yearIndex = state.cassienAllYears.indexOf(y);
+    const color = palette[yearIndex % palette.length];
+    traces.push({
+      x: x, y: yVals, name: String(y),
+      type: 'scatter', mode: 'lines',
+      line: {
+        color: color,
+        width: isLatest ? 3 : 1,
+        opacity: isLatest ? 1 : 0.4
+      }
+    });
+  });
+
+  const layout = {
+    xaxis: { title: 'Date', tickformat: '%d/%m' },
+    yaxis: { title: 'Volume (m³)' },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 70 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-cassien', traces, layout, { responsive: true, displayModeBar: false });
+}
+
+// ---------- Rendu : Débits réservés ----------
+function renderDebits() {
+  const filtered = filterDataByPeriod();
+  if (filtered.length === 0) {
+    document.getElementById('debits-content').style.display = 'none';
+    document.getElementById('debits-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('debits-content').style.display = 'block';
+  document.getElementById('debits-empty').style.display = 'none';
+
+  const dates = filtered.map(d => new Date(d.time));
+
+  // --- Graphique 1 : Pont de Pégomas ---
+  // 3 valeurs de débit + débit réservé
+  const tracesPegomas = [
+    {
+      x: dates,
+      y: filtered.map(d => d.values[COL.DEBIT_MIN_PEGOMAS] || 0),
+      name: 'Débit minimum journalier',
+      type: 'scatter', mode: 'lines',
+      line: { color: '#1f77b4', width: 2 }
+    },
+    {
+      x: dates,
+      y: filtered.map(d => d.values[COL.DEBIT_MOYEN_PEGOMAS] || 0),
+      name: 'Débit moyen journalier',
+      type: 'scatter', mode: 'lines',
+      line: { color: '#2ca02c', width: 2 }
+    },
+    {
+      x: dates,
+      y: filtered.map(d => {
+        const v = d.values[COL.DEBIT_ST_PEGOMAS];
+        return (v === undefined || v === null || v === 0) ? null : v;
+      }),
+      name: 'Débit station hydrométrique',
+      type: 'scatter', mode: 'lines',
+      connectgaps: false,
+      line: { color: '#9467bd', width: 2 }
+    }
+  ];
+
+  // Débit réservé : 310 l/s du 16/10 au 15/07, 150 l/s du 16/07 au 15/10
+  const debitReserve = filtered.map(d => {
+    const dt = new Date(d.time);
+    const monthDay = (dt.getMonth() + 1) * 100 + dt.getDate();
+    if (monthDay >= 716 && monthDay <= 1015) return 150;
+    return 310;
+  });
+  tracesPegomas.push({
+    x: dates, y: debitReserve, name: 'Débit réservé',
+    type: 'scatter', mode: 'lines',
+    line: { color: '#000000', width: 2, dash: 'dash' }
+  });
+
+  // Seuils d'alerte Pégomas (cahier des charges §6.2)
+  const seuilsPegomas = [
+    { val: 800, name: 'Alerte', color: '#ffd700' },
+    { val: 550, name: 'Alerte renforcée', color: '#ff8c00' },
+    { val: 300, name: 'Crise', color: '#ff0000' }
+  ];
+  seuilsPegomas.forEach(s => {
+    tracesPegomas.push({
+      x: [dates[0], dates[dates.length - 1]],
+      y: [s.val, s.val],
+      name: s.name,
+      type: 'scatter', mode: 'lines',
+      line: { color: s.color, width: 1.5, dash: 'dot' }
+    });
+  });
+
+  const layoutPegomas = {
+    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    yaxis: { title: 'Débit (l/s)' },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-debits-pegomas', tracesPegomas, layoutPegomas, { responsive: true, displayModeBar: false });
+
+  // --- Graphique 2 : La Siagne à Callian (Ajustadoux) ---
+  const tracesCallian = [
+    {
+      x: dates,
+      y: filtered.map(d => {
+        const v = d.values[COL.DEBIT_CALLIAN];
+        return (v === undefined || v === null || v === 0) ? null : v;
+      }),
+      name: 'Débit station hydrométrique',
+      type: 'scatter', mode: 'lines',
+      connectgaps: false,
+      line: { color: '#1f77b4', width: 2 }
+    }
+  ];
+  // Seuils d'alerte Ajustadoux (cahier des charges §6.2)
+  const seuilsCallian = [
+    { val: 700, name: 'Alerte', color: '#ffd700' },
+    { val: 550, name: 'Alerte renforcée', color: '#ff8c00' },
+    { val: 400, name: 'Crise', color: '#ff0000' }
+  ];
+  seuilsCallian.forEach(s => {
+    tracesCallian.push({
+      x: [dates[0], dates[dates.length - 1]],
+      y: [s.val, s.val],
+      name: s.name,
+      type: 'scatter', mode: 'lines',
+      line: { color: s.color, width: 1.5, dash: 'dot' }
+    });
+  });
+
+  const layoutCallian = {
+    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    yaxis: { title: 'Débit (l/s)' },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-debits-callian', tracesCallian, layoutCallian, { responsive: true, displayModeBar: false });
+}
+
+// ---------- Rendu : Production ----------
+function renderProduction() {
+  const filtered = filterDataByPeriod();
+  if (filtered.length === 0) {
+    document.getElementById('production-content').style.display = 'none';
+    document.getElementById('production-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('production-content').style.display = 'block';
+  document.getElementById('production-empty').style.display = 'none';
+
+  const dates = filtered.map(d => new Date(d.time));
+
+  // Capacités théoriques (m³/jour)
+  const CAPACITES = {
+    chateauneuf: null,      // inconnu
+    nartassier: 50000,
+    stjacques: 40000,
+    apie: 57000,
+    pdr: null               // = colonne capacité PDR
+  };
+
+  // Définition des usines
+  const usines = [
+    {
+      id: 'chateauneuf',
+      nom: 'Chateauneuf',
+      volumeCol: COL.CHATEAUNEUF,
+      capaciteReelleCol: null,
+      capaciteTheorique: CAPACITES.chateauneuf
+    },
+    {
+      id: 'nartassier',
+      nom: 'Nartassier',
+      volumeCol: COL.NARTASSIER,
+      capaciteReelleCol: null,
+      capaciteTheorique: CAPACITES.nartassier
+    },
+    {
+      id: 'stjacques',
+      nom: 'St Jacques',
+      volumeCol: COL.STJACQUES,
+      capaciteReelleCol: null,
+      capaciteTheorique: CAPACITES.stjacques
+    },
+    {
+      id: 'apie',
+      nom: 'Apié',
+      volumeCol: COL.REF_ET_APIE,
+      capaciteReelleCol: COL.CAP_APIE,
+      capaciteTheorique: CAPACITES.apie
+    },
+    {
+      id: 'pdr',
+      nom: 'PDR (basse vallée)',
+      volumeCol: COL.PROD_TOT_BV,
+      capaciteReelleCol: COL.CAP_PDR,
+      capaciteTheorique: null // = colonne capacité PDR
+    }
+  ];
+
+  usines.forEach(usine => {
+    const chartId = 'chart-prod-' + usine.id;
+    const traces = [];
+
+    // Volumes produits (barres bleues) — valeurs aberrantes exclues
+    traces.push({
+      x: dates,
+      y: filtered.map(d => saneProdValue(d.values[usine.volumeCol])),
+      name: 'Volume produit',
+      type: 'bar',
+      marker: { color: '#1f77b4' }
+    });
+
+    // Capacité réelle (ligne pointillée rouge)
+    if (usine.capaciteReelleCol !== null) {
+      traces.push({
+        x: dates,
+        y: filtered.map(d => d.values[usine.capaciteReelleCol] || 0),
+        name: 'Capacité réelle',
+        type: 'scatter', mode: 'lines',
+        line: { color: '#d62728', width: 2, dash: 'dash' }
+      });
+    }
+
+    // Capacité théorique (ligne pointillée verte)
+    let capTheo = usine.capaciteTheorique;
+    if (usine.id === 'pdr') {
+      // PDR : capacité théorique = colonne capacité PDR
+      capTheo = null;
+      traces.push({
+        x: dates,
+        y: filtered.map(d => d.values[COL.CAP_PDR] || 0),
+        name: 'Capacité théorique',
+        type: 'scatter', mode: 'lines',
+        line: { color: '#2ca02c', width: 2, dash: 'dash' }
+      });
+    } else if (capTheo !== null) {
+      traces.push({
+        x: dates,
+        y: filtered.map(() => capTheo),
+        name: 'Capacité théorique',
+        type: 'scatter', mode: 'lines',
+        line: { color: '#2ca02c', width: 2, dash: 'dash' }
+      });
+    }
+
+    const layout = {
+      xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+      yaxis: { title: 'Volume (m³/jour)' },
+      legend: { orientation: 'h', y: -0.15 },
+      margin: { t: 30, r: 20, b: 50, l: 60 },
+      hovermode: 'x unified',
+      barmode: 'overlay'
+    };
+    Plotly.react(chartId, traces, layout, { responsive: true, displayModeBar: false });
+  });
+
+  // --- Graphique "Production du jour de pointe" (indépendant du filtre) ---
+  // Utilise tout l'historique : pour chaque année, la valeur max de production journalière
+  const allData = state.data;
+  const yearsMap = {};
+  allData.forEach(d => {
+    const prod = getProduction(d);
+    if (prod > 0) {
+      if (!yearsMap[d.annee] || prod > yearsMap[d.annee].value) {
+        yearsMap[d.annee] = { value: prod, date: d.date };
+      }
+    }
+  });
+  const yearsSorted = Object.keys(yearsMap).map(Number).sort((a, b) => a - b);
+  const xPointe = yearsSorted.map(y => String(y));
+  const yPointe = yearsSorted.map(y => yearsMap[y].value);
+  // Volume au-dessus des barres (valeur seule, sans unité)
+  const volumeLabels = yearsSorted.map(y => fmtNum(yearsMap[y].value));
+  // Date dd/mm à l'intérieur des barres
+  const dateLabels = yearsSorted.map(y => {
+    const d = yearsMap[y].date;
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    return dd + '/' + mm;
+  });
+  const hoverText = yearsSorted.map(y => {
+    const d = yearsMap[y].date;
+    return fmtNum(yearsMap[y].value) + ' m³ — ' + fmtDate(d);
+  });
+
+  const tracePointe = {
+    x: xPointe, y: yPointe, name: 'Production max journalière',
+    type: 'bar',
+    marker: { color: '#1f77b4' },
+    text: volumeLabels,
+    textposition: 'outside',
+    textfont: { size: 12, color: '#31333f' },
+    cliponaxis: false,
+    customdata: hoverText,
+    hovertemplate: '%{customdata}<extra></extra>'
+  };
+  // Annotations : date dd/mm horizontale à l'intérieur de chaque barre
+  const dateAnnotations = yearsSorted.map((y, i) => ({
+    x: xPointe[i],
+    y: yPointe[i] * 0.5,
+    text: dateLabels[i],
+    showarrow: false,
+    font: { size: 12, color: '#ffffff' },
+    xanchor: 'center',
+    yanchor: 'middle'
+  }));
+  const layoutPointe = {
+    xaxis: { title: 'Année' },
+    yaxis: { title: 'Volume (m³/jour)', rangemode: 'tozero' },
+    margin: { t: 50, r: 20, b: 50, l: 60 },
+    annotations: dateAnnotations,
+    // Marge haute pour les labels volume au-dessus des barres
+    uniformtext: { minsize: 10, mode: 'hide' }
+  };
+  // Étendre un peu l'axe Y pour laisser de la place aux labels au-dessus
+  const maxY = Math.max(...yPointe, 0);
+  layoutPointe.yaxis.range = [0, maxY * 1.15];
+  Plotly.react('chart-prod-pointe', [tracePointe], layoutPointe, { responsive: true, displayModeBar: false });
+}
+
+// ---------- Rendu : Ventes en gros ----------
+function renderVentes() {
+  const filtered = filterDataByPeriod();
+  if (filtered.length === 0) {
+    document.getElementById('ventes-content').style.display = 'none';
+    document.getElementById('ventes-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('ventes-content').style.display = 'block';
+  document.getElementById('ventes-empty').style.display = 'none';
+
+  const dates = filtered.map(d => new Date(d.time));
+  const vegTotal = filtered.map(d => getVEG(d));
+  const sief = filtered.map(d => d.values[COL.SIEF] || 0);
+  const valbonne = filtered.map(d => d.values[COL.VALBONNE] || 0);
+  const capRoux = filtered.map(d => d.values[COL.CAP_ROUX] || 0);
+
+  // Pointe VEG
+  let maxVeg = -Infinity, maxIdx = -1;
+  vegTotal.forEach((v, i) => { if (v > maxVeg) { maxVeg = v; maxIdx = i; } });
+
+  const traces = [
+    {
+      x: dates, y: vegTotal, name: 'Total VEG SICASIL',
+      type: 'scatter', mode: 'lines+markers',
+      line: { color: '#1f77b4', width: 2.5 },
+      marker: { size: 5, color: '#1f77b4' }
+    },
+    {
+      x: dates, y: sief, name: 'SIEF',
+      type: 'scatter', mode: 'lines',
+      line: { color: '#4a90d9', width: 1.5 }
+    },
+    {
+      x: dates, y: valbonne, name: 'Valbonne',
+      type: 'scatter', mode: 'lines',
+      line: { color: '#d62728', width: 1.5 }
+    },
+    {
+      x: dates, y: capRoux, name: 'Cap Roux / Théoule / Trayas',
+      type: 'scatter', mode: 'lines',
+      line: { color: '#e91e8c', width: 1.5 }
+    },
+    {
+      x: [dates[maxIdx]], y: [maxVeg], name: 'Pointe VEG',
+      type: 'scatter', mode: 'markers+text',
+      marker: { color: '#d62728', size: 14, line: { color: 'white', width: 2 } },
+      text: [fmtNum(maxVeg)],
+      textposition: 'top center',
+      textfont: { size: 11, color: '#d62728' }
+    }
+  ];
+
+  const layout = {
+    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    yaxis: { title: 'Volume (m³)' },
+    legend: { orientation: 'h', y: -0.15 },
+    margin: { t: 30, r: 20, b: 50, l: 60 },
+    hovermode: 'x unified'
+  };
+  Plotly.react('chart-ventes', traces, layout, { responsive: true, displayModeBar: false });
+
+  // Camembert
+  const totals = [
+    filtered.reduce((s, d) => s + (d.values[COL.SIEF] || 0), 0),
+    filtered.reduce((s, d) => s + (d.values[COL.VALBONNE] || 0), 0),
+    filtered.reduce((s, d) => s + (d.values[COL.CAP_ROUX] || 0), 0)
+  ];
+  const pieTrace = {
+    labels: ['SIEF', 'Valbonne', 'Cap Roux / Théoule / Trayas'],
+    values: totals,
+    type: 'pie',
+    marker: { colors: ['#4a90d9', '#d62728', '#e91e8c'] },
+    textinfo: 'label+percent',
+    hovertemplate: '%{label}<br>%{value:,.0f} m³ (%{percent})<extra></extra>'
+  };
+  const layoutPie = {
+    margin: { t: 20, r: 20, b: 20, l: 20 },
+    showlegend: true
+  };
+  Plotly.react('chart-ventes-pie', [pieTrace], layoutPie, { responsive: true, displayModeBar: false });
+}
+
+// ---------- Rendu : Page App ----------
+function updateAppPage() {
+  const success = document.getElementById('app-success');
+  success.style.display = 'block';
+  success.textContent = '✅ Fichier chargé avec succès : ' + state.fileName;
+
+  const minDate = state.data.length > 0 ? new Date(state.data[0].time) : null;
+  const maxDate = state.data.length > 0 ? new Date(state.data[state.data.length - 1].time) : null;
+
+  // Diagnostic de chargement (infos fichier + mapping)
+  const diag = document.getElementById('diagnostic-content');
+  let html = '<h3>Informations de chargement</h3>';
+  html += '<p><strong>Nom du fichier</strong> : ' + (state.fileName || '—') + '</p>';
+  html += '<p><strong>Chemin / dossier</strong> : ' + (state.filePath || '—') + '</p>';
+  html += '<p><strong>Lignes conservées</strong> : ' + fmtNum(state.data.length) + '</p>';
+  html += '<p><strong>Colonnes</strong> : ' + Object.keys(state.colMap).length + '</p>';
+  html += '<p><strong>Période détectée</strong> : ' + (minDate ? fmtDate(minDate) : '—') + ' → ' + (maxDate ? fmtDate(maxDate) : '—') + '</p>';
+  diag.innerHTML = html;
+
+  // Paramètres statiques
+  const statiques = document.getElementById('statiques-content');
+  statiques.innerHTML = `
+    <h3>Formule cote → volume du lac de Saint-Cassien</h3>
+    <p><code>V(x) = 0.001586592054 × x³ - 0.6006702028 × x² + 77.42098071 × x - 3415.762614</code></p>
+    <p><code>volume_m3 = max(0, V(x) × 1_000_000)</code></p>
+    <h3>Débits réservés</h3>
+    <ul>
+      <li>Loup (aval Gréolières + Bramafan) : <strong>310 l/s</strong> du 16/10 au 15/07, <strong>150 l/s</strong> du 16/07 au 15/10</li>
+    </ul>
+    <h3>Seuils d'alerte</h3>
+    <ul>
+      <li><strong>Pont de Pégomas</strong> : Alerte 800 l/s, Alerte renforcée 550 l/s, Crise 300 l/s</li>
+      <li><strong>Ajustadoux (Callian)</strong> : Alerte 700 l/s, Alerte renforcée 550 l/s, Crise 400 l/s</li>
+    </ul>
+    <h3>Capacités théoriques des usines</h3>
+    <ul>
+      <li><strong>Chateauneuf</strong> : inconnue</li>
+      <li><strong>Nartassier</strong> : 50 000 m³/jour</li>
+      <li><strong>St Jacques</strong> : 40 000 m³/jour</li>
+      <li><strong>Apié</strong> : 57 000 m³/jour</li>
+      <li><strong>PDR</strong> : colonne "Capacité de pompage journalier des PDR Vallée de la Siagne"</li>
+    </ul>
+    <h3>Disponibilités réglementaires</h3>
+    <ul>
+      <li><strong>Veyans</strong> : 30 000 m³/j du 15/07 au 14/10, sinon 0</li>
+      <li><strong>PDR</strong> : 80 000 m³/j du 01/04 au 14/10, sinon 43 200 m³/j</li>
+      <li><strong>APIE</strong> : C = MAX(0 ; D - P), sans limitation J</li>
+    </ul>
+    <h3>Lignes de référence du lac</h3>
+    <ul>
+      <li><strong>Retenue normale</strong> : cote 147,35 m</li>
+      <li><strong>Minimum exploitation</strong> : cote 138,50 m</li>
+      <li><strong>20 000 000 m³</strong> : ligne sans label</li>
+      <li><strong>1er juillet</strong> : ligne verticale</li>
+    </ul>
+  `;
+
+  // Mapping des colonnes par catégorie
+  const categories = {
+    'Ressources naturelles': [COL.BARRAGE, COL.FOUX_TOTAL, COL.GREOLIERES_TOTAL, COL.BRAMAFAN_TOTAL, COL.COTE_CASSIEN],
+    'Réglementation (droits d\'eau)': [COL.DROIT_STCEZ, COL.DROIT_FOUX, COL.DROIT_JACOURETS, COL.DROIT_VEYANS, COL.DROIT_APIE, COL.DROIT_PDR, COL.DROIT_GREOLIERES_BRAMAFAN, COL.DROIT_LOUP],
+    'Ressources disponibles': [COL.STCEZ_DISPO, COL.GREOLIERES_DISPO, COL.APIE_DISPO, COL.PDR_DISPO, COL.VEYANS_DISPO],
+    'Points de contrôles de débits': [COL.DEBIT_MIN_PEGOMAS, COL.DEBIT_MOYEN_PEGOMAS, COL.DEBIT_ST_PEGOMAS, COL.DEBIT_CALLIAN],
+    'Prélèvements': [COL.STCEZ_PREL, COL.FOUX_PREL, COL.VEYANS_PREL, COL.APIE_PREL, COL.PDR1_PREL, COL.PDR2_PREL, COL.PDR7_PREL, COL.BRAMAFAN_PREL, COL.JACOURETS_PREL],
+    'Capacité de production': [COL.CAP_APIE, COL.CAP_PDR],
+    'Volumes produits': [COL.NARTASSIER, COL.STJACQUES, COL.CHATEAUNEUF, COL.REF_ET_APIE, COL.PROD_TOT_BV],
+    'Distribution': [COL.BESOINS_PROPRES, COL.SIEF, COL.VALBONNE, COL.CAP_ROUX, COL.JACOURETS_PREL]
+  };
+
+  const mapping = document.getElementById('mapping-content');
+  let mapHtml = '';
+  Object.entries(categories).forEach(([cat, cols]) => {
+    mapHtml += '<h3>' + cat + '</h3>';
+    mapHtml += '<table><thead><tr><th>Colonne Excel</th><th>Libellé nettoyé</th></tr></thead><tbody>';
+    cols.forEach(c => {
+      const label = state.colMap[c] !== undefined ? state.colMap[c] : '(non trouvé)';
+      mapHtml += '<tr><td>' + (c + 1) + '</td><td>' + label + '</td></tr>';
+    });
+    mapHtml += '</tbody></table>';
+  });
+  mapping.innerHTML = mapHtml;
+}
+
+// ---------- Initialisation ----------
+async function init() {
+  // Restaurer le filtre
+  const savedPeriod = localStorage.getItem('padres_period');
+  if (savedPeriod) state.period = savedPeriod;
+  const savedCustomStart = localStorage.getItem('padres_custom_start');
+  const savedCustomEnd = localStorage.getItem('padres_custom_end');
+  if (savedCustomStart) state.customStart = new Date(savedCustomStart);
+  if (savedCustomEnd) state.customEnd = new Date(savedCustomEnd);
+
+  syncPeriodSelects();
+
+  // Essayer de recharger le dernier fichier
+  const reloaded = await tryReloadLastFile();
+  if (!reloaded) {
+    // État vide
+    document.getElementById('dashboard-empty').style.display = 'block';
+    document.getElementById('ressources-empty').style.display = 'block';
+    document.getElementById('production-empty').style.display = 'block';
+    document.getElementById('debits-empty').style.display = 'block';
+    document.getElementById('ventes-empty').style.display = 'block';
+  }
+}
+
+// Sauvegarder le filtre à chaque changement
+function savePeriod() {
+  localStorage.setItem('padres_period', state.period);
+  if (state.customStart) localStorage.setItem('padres_custom_start', state.customStart.toISOString());
+  if (state.customEnd) localStorage.setItem('padres_custom_end', state.customEnd.toISOString());
+}
+
+// Override onPeriodChange pour sauvegarder
+const _origOnPeriodChange = onPeriodChange;
+onPeriodChange = function() {
+  _origOnPeriodChange();
+  savePeriod();
+};
+const _origOnCustomDateChange = onCustomDateChange;
+onCustomDateChange = function() {
+  _origOnCustomDateChange();
+  savePeriod();
+};
+
+// Lancer
+init();
+</script>
+</body>
+</html>
