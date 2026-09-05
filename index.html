@@ -156,6 +156,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
 .chart-box-sm { width: 100%; height: 350px; }
 /* App page */
 .file-upload {
+  position: relative;
   border: 2px dashed #aaa;
   border-radius: 10px;
   padding: 40px;
@@ -165,9 +166,26 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   margin-bottom: 20px;
 }
 .file-upload:hover { border-color: var(--primary); }
+.file-upload.dragover {
+  border-color: #2ca02c;
+  background: #f0fff0;
+}
 .file-upload input { display: none; }
 .file-upload .icon { font-size: 48px; margin-bottom: 10px; }
+.file-upload .drop-icon {
+  font-size: 40px;
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  opacity: 0.6;
+  animation: dropbounce 1.6s infinite;
+  pointer-events: none;
+}
 .file-upload .text { font-size: 16px; color: var(--text-light); }
+@keyframes dropbounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(6px); }
+}
 .success-msg {
   background: #d4edda;
   color: #155724;
@@ -215,6 +233,32 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
 /* Year checkboxes */
 .year-selector { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
 .year-selector label { display: flex; align-items: center; gap: 5px; font-size: 14px; cursor: pointer; }
+/* Bouton hamburger : caché par défaut (bureau) */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 22px;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+/* Overlay sombre derrière le menu mobile */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 900;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .sidebar { width: 70px; }
@@ -222,6 +266,50 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   .nav-item { padding: 10px 10px; font-size: 13px; text-align: center; }
   .main { padding: 20px 15px; }
   .kpi-card { min-width: 150px; }
+}
+
+/* --- Affichage smartphone (< 768px) : menu hamburger --- */
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+
+  /* Bouton hamburger visible */
+  .hamburger { display: block; }
+
+  /* La sidebar devient un panneau coulissant hors écran */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 950;
+    background: var(--sidebar-bg);
+  }
+  /* Sidebar ouverte (ajoutée via .sidebar.open) */
+  .sidebar.open { transform: translateX(0); }
+  /* Overlay visible quand sidebar ouverte */
+  .sidebar-overlay.show { display: block; }
+
+  /* Le contenu occupe toute la largeur et laisse de la place au haut */
+  .main {
+    padding: 70px 12px 20px;
+    max-width: 100%;
+  }
+  /* Titres et filtres plus compacts */
+  h1 { font-size: 20px; }
+  .filter-bar { padding: 12px; gap: 10px; flex-direction: column; align-items: stretch; }
+  .filter-bar select, .filter-bar input { font-size: 16px; }
+  .kpi-value { font-size: 20px; }
+
+  /* Graphiques plus bas sur mobile */
+  .chart-box { height: 320px; }
+  .chart-box-sm { height: 280px; }
+
+  /* Tableau à défilement horizontal */
+  .chart-container { overflow-x: auto; }
+  .data-table { font-size: 12px; }
 }
 </style>
 </head>
@@ -240,8 +328,13 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <a class="nav-item" data-page="app" onclick="showPage('app')">⚙️ App</a>
 </nav>
 
+<!-- Overlay sombre pour fermer le menu mobile -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <!-- ==================== MAIN ==================== -->
 <div class="main">
+  <!-- Bouton hamburger (visible uniquement sur mobile) -->
+  <button class="hamburger" onclick="toggleSidebar()" aria-label="Ouvrir le menu">☰</button>
 
   <!-- ========== PAGE TABLEAU DE BORD ========== -->
   <div class="page active" id="page-dashboard">
@@ -257,6 +350,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <option value="last_7">7 derniers jours</option>
           <option value="last_30" selected>30 derniers jours</option>
           <option value="last_60">60 derniers jours</option>
+          <option value="last_6m">6 derniers mois</option>
           <option value="ytd">Année en cours</option>
           <option value="last_12m">12 derniers mois</option>
           <option value="prev_year">Année précédente</option>
@@ -324,6 +418,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <option value="last_7">7 derniers jours</option>
           <option value="last_30" selected>30 derniers jours</option>
           <option value="last_60">60 derniers jours</option>
+          <option value="last_6m">6 derniers mois</option>
           <option value="ytd">Année en cours</option>
           <option value="last_12m">12 derniers mois</option>
           <option value="prev_year">Année précédente</option>
@@ -374,6 +469,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <option value="last_7">7 derniers jours</option>
           <option value="last_30" selected>30 derniers jours</option>
           <option value="last_60">60 derniers jours</option>
+          <option value="last_6m">6 derniers mois</option>
           <option value="ytd">Année en cours</option>
           <option value="last_12m">12 derniers mois</option>
           <option value="prev_year">Année précédente</option>
@@ -429,6 +525,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <option value="last_7">7 derniers jours</option>
           <option value="last_30" selected>30 derniers jours</option>
           <option value="last_60">60 derniers jours</option>
+          <option value="last_6m">6 derniers mois</option>
           <option value="ytd">Année en cours</option>
           <option value="last_12m">12 derniers mois</option>
           <option value="prev_year">Année précédente</option>
@@ -469,6 +566,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <option value="last_7">7 derniers jours</option>
           <option value="last_30" selected>30 derniers jours</option>
           <option value="last_60">60 derniers jours</option>
+          <option value="last_6m">6 derniers mois</option>
           <option value="ytd">Année en cours</option>
           <option value="last_12m">12 derniers mois</option>
           <option value="prev_year">Année précédente</option>
@@ -498,9 +596,11 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <!-- ========== PAGE APP ========== -->
   <div class="page" id="page-app">
     <h1>⚙️ App</h1>
-    <div class="file-upload" onclick="document.getElementById('file-input').click()">
-      <div class="icon">📁</div>
-      <div class="text">Cliquez pour sélectionner un fichier Excel<br>du type PADRES données historiques<br>(.xlsx, .xlsm, .xls)</div>
+    <div class="file-upload" id="file-drop" onclick="document.getElementById('file-input').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📤</div>
+      <div class="drop-icon">👇</div>
+      <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
       <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls" onchange="handleFileSelect(event)">
     </div>
     <div id="app-success" class="success-msg" style="display:none;"></div>
@@ -660,6 +760,8 @@ function showPage(pageName) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + pageName).classList.add('active');
   document.querySelector('.nav-item[data-page="' + pageName + '"]').classList.add('active');
+  // Fermer le menu hamburger mobile
+  closeSidebar();
   // Re-render la page si des données sont chargées
   if (state.loaded) {
     updatePeriodRangeLabels();
@@ -669,6 +771,42 @@ function showPage(pageName) {
     if (pageName === 'debits') renderDebits();
     if (pageName === 'ventes') renderVentes();
   }
+  // Redimensionner les graphiques après rendu (bug retaillage)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(resizeActiveCharts);
+  });
+}
+
+// Ouvre / ferme la sidebar mobile (hamburger)
+function toggleSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sb.classList.contains('open');
+  sb.classList.toggle('open', !isOpen);
+  if (overlay) overlay.classList.toggle('show', !isOpen);
+}
+
+// Ferme la sidebar mobile (appelée lors du choix d'une page)
+function closeSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (sb) sb.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
+}
+
+// Redimensionne tous les graphiques Plotly visibles (corrige le retaillage)
+function resizeActiveCharts() {
+  if (typeof Plotly === 'undefined') return;
+  const charts = document.querySelectorAll('.chart-box, .chart-box-sm');
+  charts.forEach((el) => {
+    if (el.offsetParent !== null) { // uniquement les éléments visibles
+      try {
+        Plotly.Plots.resize(el);
+      } catch (e) {
+        // ignorer : graphique non initialisé
+      }
+    }
+  });
 }
 
 // ---------- Filtre de période ----------
@@ -796,6 +934,14 @@ function getPeriodRange() {
       end = new Date(today);
       break;
     }
+    case 'last_6m': {
+      start = new Date(today);
+      start.setMonth(start.getMonth() - 6);
+      start.setDate(start.getDate() + 1);
+      start.setHours(0,0,0,0);
+      end = new Date(today);
+      break;
+    }
     case 'ytd': {
       start = new Date(today.getFullYear(), 0, 1);
       end = new Date(today);
@@ -856,6 +1002,31 @@ async function handleFileSelect(event) {
   const file = event.target.files[0];
   if (!file) return;
   await loadFile(file);
+}
+
+// --- Glisser-déposer ---
+function onDragOver(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('file-drop');
+  if (zone) zone.classList.add('dragover');
+}
+
+function onDragLeave(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('file-drop');
+  if (zone) zone.classList.remove('dragover');
+}
+
+async function onDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('file-drop');
+  if (zone) zone.classList.remove('dragover');
+  const files = event.dataTransfer && event.dataTransfer.files;
+  if (!files || files.length === 0) return;
+  await loadFile(files[0]);
 }
 
 async function loadFile(file) {
@@ -2122,6 +2293,15 @@ onCustomDateChange = function() {
 
 // Lancer
 init();
+
+// Redimensionner les graphiques quand la fenêtre change de taille
+window.addEventListener('resize', () => {
+  requestAnimationFrame(resizeActiveCharts);
+});
+
+// Empêcher le navigateur d'ouvrir le fichier si le dépôt a lieu hors de la zone
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => e.preventDefault());
 </script>
 </body>
 </html>

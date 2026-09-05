@@ -1,7 +1,7 @@
 # Cahier des charges fonctionnel PADRES HTML / JavaScript
 
-**Version : 3.3**
-**Date de mise à jour : 14/08/2026**
+**Version : 3.5**
+**Date de mise à jour : 15/08/2026**
 
 ## Historique des modifications
 
@@ -13,6 +13,8 @@
 | 3.1 | 14/08/2026 | Filtre d'outliers sur les volumes de production (plafond 200 000 m³/j par usine) pour exclure les valeurs aberrantes type index cumulé |
 | 3.2 | 14/08/2026 | Affichage des bornes de période à droite du sélecteur ; KPI « Mesure la plus récente » = dernière date du fichier |
 | 3.3 | 14/08/2026 | Filtrage des valeurs nulles sur les « Débit station hydrométrique » (page Débits réservés) |
+| 3.4 | 15/08/2026 | Correctif retaillage des graphiques, filtre « 6 derniers mois », affichage mobile avec menu hamburger |
+| 3.5 | 15/08/2026 | Glisser-déposer de fichier dans la page App |
 
 ---
 
@@ -318,6 +320,7 @@ Le filtre de période est partagé entre Tableau de bord, Ressources, Production
 - 7 derniers jours
 - 30 derniers jours (défaut)
 - 60 derniers jours
+- 6 derniers mois (période glissante)
 - Année en cours
 - 12 derniers mois
 - Année précédente
@@ -351,6 +354,46 @@ Cet affichage doit :
 Les graphiques suivants **ne dépendent pas** de ce filtre global :
 - Le lac de Saint-Cassien (utilise tout l'historique)
 - La production du jour de pointe (utilise tout l'historique)
+
+### 7.2 Filtre « 6 derniers mois »
+
+Le filtre **« 6 derniers mois »** (période glissante) est disponible entre « 60 derniers jours » et « Année en cours » dans tous les sélecteurs de période.
+
+Il est calculé de manière cohérente avec « 12 derniers mois » :
+```
+start = aujourd'hui - 6 mois
+start = start + 1 jour   (décalage comme pour 12 mois)
+end   = aujourd'hui
+```
+
+La valeur `last_6m` est gérée dans les 5 sélecteurs (`global-period`, `-2`, `-3`, `-4`, `-5`) et dans `getPeriodRange()`.
+
+## 17. Rendu sur téléphone portable
+
+### 17.1 Menu hamburger
+
+- Le bouton hamburger **« ☰ »** est **caché par défaut** sur ordinateur (≥ 768 px).
+- Sur **smartphone** (< 768 px), il s'affiche en haut à gauche et ouvre la sidebar en **panneau coulissant**.
+- Un **overlay sombre** couvre le contenu quand le menu est ouvert ; cliquer dessus le ferme.
+- Choisir une page ferme automatiquement le menu.
+- Sur les écrans entre **768 et 900 px**, le comportement existant (sidebar réduite en icônes) est conservé.
+
+### 17.2 Règles responsive mobile (< 768 px)
+
+- Le contenu principal occupe **toute la largeur** (pas de barre latérale).
+- Les **cards KPI**, **filtres** et **graphes** s'empilent verticalement.
+- Les **inputs/selects** passent à `font-size: 16px` pour éviter le zoom automatique iOS.
+- Les **graphes** sont moins hauts (`320 px`) pour tenir à l'écran.
+- Le **tableau des ressources** défile horizontalement si nécessaire.
+- Le **titre** principal est réduit en taille.
+
+### 17.3 Correctif du retaillage des graphiques
+
+Un utilitaire `resizeActiveCharts()` appelle `Plotly.Plots.resize()` sur tous les graphiques **visibles** (`.chart-box`, `.chart-box-sm` de la page active). Il est déclenché :
+- à la fin de `showPage()` (après `requestAnimationFrame`)
+- lors d'un `resize` de la fenêtre
+
+Cela corrige les graphiques **mal retaillés** (trop petits avec espace blanc, ou débordants) qui apparaissaient après un changement de page, un changement de taille de fenêtre ou un rechargement de fichier.
 
 ## 8. Page Tableau de bord
 
@@ -543,7 +586,10 @@ Ces valeurs sont donc **exclues de l'affichage** :
 ## 14. Page App
 
 - Permettre le chargement du fichier Excel.
-- Texte de sélection : « Cliquez pour sélectionner un fichier Excel **du type PADRES données historiques** (.xlsx, .xlsm, .xls) ».
+- Texte de sélection : « Cliquez pour sélectionner un fichier, ou faites glisser ici un fichier Excel du type « PADRES données historiques » ».
+- **Glisser-déposer** : l'utilisateur peut déposer un fichier directement dans le cadre principal (événements `dragover`/`dragleave`/`drop`). Le cadre s'illumine (bordure verte) au survol d'un fichier.
+- Une **icône animée** (👇) indique visuellement que le glisser-déposer est possible.
+- Le dépôt d'un fichier hors de la zone est neutralisé pour éviter l'ouverture par le navigateur.
 - Afficher une confirmation verte après chargement réussi (en dehors des sections repliables).
 - Afficher une erreur rouge en cas de fichier non valide.
 
