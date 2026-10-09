@@ -68,10 +68,11 @@ Les graphes et données ne doivent être visibles qu'après chargement réussi d
 ## 4. Chargement du fichier Excel et état initial
 
 - Avant chargement, essayer de recharger le fichier utilisé lors de la dernière utilisation (stocké dans IndexedDB).
-- En cas d'échec ou si c'est le premier lancement, les pages Tableau de bord, Ressources, Production, Ventes en gros et Débits réservés doivent afficher un état vide : « Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App. »
+- En cas d'échec ou si c'est le premier lancement, les pages Tableau de bord, Ressources, Production, Ventes en gros et Débits réservés doivent afficher un composant de sélection de fichier identique à celui de la page App (texte « Cliquez pour sélectionner un fichier, ou faites glisser ici un fichier Excel du type « PADRES données historiques » »), permettant d'ajouter un fichier directement depuis ces pages. Ce comportement ne s'applique que lorsqu'aucun fichier n'est chargé : si un fichier est chargé mais qu'aucune donnée ne correspond à la période sélectionnée, ces pages affichent « Aucune donnée pour la période sélectionnée. »
 - La page App doit afficher un composant de sélection de fichier acceptant `.xlsx`, `.xlsm` et `.xls`.
 - Le texte de sélection doit préciser : **« du type PADRES données historiques »** pour éviter que l'utilisateur essaie de charger un autre type de fichier.
 - La feuille `data` doit être utilisée en priorité. Si elle n'existe pas, utiliser la première feuille du classeur.
+- Pendant le chargement (sélection, glisser-déposer ou rechargement automatique), une barre de progression plein écran est affichée avec les étapes « Lecture du fichier », « Analyse du classeur Excel », « Extraction des lignes » et « Traitement des données ».
 
 ### 4.1 Validation du fichier
 
@@ -540,6 +541,7 @@ Mêmes couleurs que le graphique d'évolution.
 - Section « 🚱 Débits réservés »
 - Positionnée entre « Ventes en gros » et « App » dans le menu
 - Utilise le filtre global de période
+- Les séries de débit sont tracées en courbes lissées (**spline**) passant par tous les points, sans angles.
 
 ### Graphique 1 : Pont de Pégomas
 
@@ -549,8 +551,7 @@ Affiche les 3 valeurs de débit disponibles à Pégomas :
 - Débit Station hydrométrique La Siagne à Pégomas (l/s)
 
 Affiche également le **débit réservé** :
-- 310 l/s du 16 octobre au 15 juillet
-- 150 l/s du 16 juillet au 15 octobre
+- 500 l/s toute l'année
 
 **Lignes horizontales pointillées des seuils d'alerte :**
 

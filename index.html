@@ -195,6 +195,52 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   margin-bottom: 15px;
   font-weight: 600;
 }
+/* Overlay de chargement */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.85);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+#loading-overlay.show { display: flex; }
+#loading-overlay .loading-box {
+  background: #fff;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 30px 40px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  text-align: center;
+  min-width: 320px;
+  max-width: 90vw;
+}
+#loading-overlay .loading-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.loading-track {
+  width: 100%;
+  height: 12px;
+  background: #e9ecef;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.loading-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary), #4aa3df);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+#loading-label {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--text-light);
+}
 .diagnostic {
   background: #f8f9fa;
   border: 1px solid #ddd;
@@ -315,6 +361,18 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
 </head>
 <body>
 
+<!-- Champ de fichier partagé (déclenché depuis la page App et les pages de données) -->
+<input type="file" id="file-input" accept=".xlsx,.xlsm,.xls" onchange="handleFileSelect(event)" style="display:none;">
+
+<!-- Overlay de chargement -->
+<div id="loading-overlay">
+  <div class="loading-box">
+    <div class="loading-title">⏳ Chargement du fichier…</div>
+    <div class="loading-track"><div class="loading-bar" id="loading-bar"></div></div>
+    <div id="loading-label">Préparation…</div>
+  </div>
+</div>
+
 <!-- ==================== SIDEBAR ==================== -->
 <nav class="sidebar">
   <div class="sidebar-title">
@@ -339,8 +397,15 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <!-- ========== PAGE TABLEAU DE BORD ========== -->
   <div class="page active" id="page-dashboard">
     <h1>💧 PADRES - Tableau de bord SICASIL</h1>
-    <div id="dashboard-empty" class="empty-state" style="display:none;">
-      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    <div class="file-upload" id="dashboard-empty" style="display:none;"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📤</div>
+      <div class="drop-icon">👇</div>
+      <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
+    </div>
+    <div id="dashboard-no-data" class="empty-state" style="display:none;">
+      Aucune donnée pour la période sélectionnée.
     </div>
     <div id="dashboard-content" style="display:none;">
       <div class="filter-bar">
@@ -407,8 +472,15 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <!-- ========== PAGE RESSOURCES ========== -->
   <div class="page" id="page-ressources">
     <h1>💧 Ressources</h1>
-    <div id="ressources-empty" class="empty-state" style="display:none;">
-      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    <div class="file-upload" id="ressources-empty" style="display:none;"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📤</div>
+      <div class="drop-icon">👇</div>
+      <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
+    </div>
+    <div id="ressources-no-data" class="empty-state" style="display:none;">
+      Aucune donnée pour la période sélectionnée.
     </div>
     <div id="ressources-content" style="display:none;">
       <div class="filter-bar">
@@ -458,8 +530,15 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <!-- ========== PAGE PRODUCTION ========== -->
   <div class="page" id="page-production">
     <h1>🏭 Production</h1>
-    <div id="production-empty" class="empty-state" style="display:none;">
-      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    <div class="file-upload" id="production-empty" style="display:none;"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📤</div>
+      <div class="drop-icon">👇</div>
+      <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
+    </div>
+    <div id="production-no-data" class="empty-state" style="display:none;">
+      Aucune donnée pour la période sélectionnée.
     </div>
     <div id="production-content" style="display:none;">
       <div class="filter-bar">
@@ -514,8 +593,15 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <!-- ========== PAGE VENTES EN GROS ========== -->
   <div class="page" id="page-ventes">
     <h1>🚰 Ventes en gros détaillées</h1>
-    <div id="ventes-empty" class="empty-state" style="display:none;">
-      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    <div class="file-upload" id="ventes-empty" style="display:none;"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📤</div>
+      <div class="drop-icon">👇</div>
+      <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
+    </div>
+    <div id="ventes-no-data" class="empty-state" style="display:none;">
+      Aucune donnée pour la période sélectionnée.
     </div>
     <div id="ventes-content" style="display:none;">
       <div class="filter-bar">
@@ -555,8 +641,15 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   <!-- ========== PAGE DÉBITS RÉSERVÉS ========== -->
   <div class="page" id="page-debits">
     <h1>🚱 Débits réservés</h1>
-    <div id="debits-empty" class="empty-state" style="display:none;">
-      Aucun fichier chargé. Veuillez sélectionner un fichier Excel dans la page App.
+    <div class="file-upload" id="debits-empty" style="display:none;"
+         onclick="document.getElementById('file-input').click()"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📤</div>
+      <div class="drop-icon">👇</div>
+      <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
+    </div>
+    <div id="debits-no-data" class="empty-state" style="display:none;">
+      Aucune donnée pour la période sélectionnée.
     </div>
     <div id="debits-content" style="display:none;">
       <div class="filter-bar">
@@ -601,7 +694,6 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
       <div class="icon">📤</div>
       <div class="drop-icon">👇</div>
       <div class="text">Cliquez pour sélectionner un fichier,<br>ou faites glisser ici un fichier Excel<br>du type « PADRES données historiques »</div>
-      <input type="file" id="file-input" accept=".xlsx,.xlsm,.xls" onchange="handleFileSelect(event)">
     </div>
     <div id="app-success" class="success-msg" style="display:none;"></div>
     <details class="diagnostic" id="diagnostic">
@@ -997,6 +1089,26 @@ function filterDataByPeriod() {
   return result;
 }
 
+// ---------- Barre de progression / overlay de chargement ----------
+function showLoading() {
+  document.getElementById('loading-bar').style.width = '0%';
+  document.getElementById('loading-label').textContent = 'Préparation…';
+  document.getElementById('loading-overlay').classList.add('show');
+}
+
+function updateLoading(pct, label) {
+  document.getElementById('loading-bar').style.width = pct + '%';
+  if (label) document.getElementById('loading-label').textContent = label;
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('show');
+}
+
+function yieldToPaint() {
+  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+
 // ---------- Chargement du fichier ----------
 async function handleFileSelect(event) {
   const file = event.target.files[0];
@@ -1008,21 +1120,21 @@ async function handleFileSelect(event) {
 function onDragOver(event) {
   event.preventDefault();
   event.stopPropagation();
-  const zone = document.getElementById('file-drop');
+  const zone = event.currentTarget;
   if (zone) zone.classList.add('dragover');
 }
 
 function onDragLeave(event) {
   event.preventDefault();
   event.stopPropagation();
-  const zone = document.getElementById('file-drop');
+  const zone = event.currentTarget;
   if (zone) zone.classList.remove('dragover');
 }
 
 async function onDrop(event) {
   event.preventDefault();
   event.stopPropagation();
-  const zone = document.getElementById('file-drop');
+  const zone = event.currentTarget;
   if (zone) zone.classList.remove('dragover');
   const files = event.dataTransfer && event.dataTransfer.files;
   if (!files || files.length === 0) return;
@@ -1030,11 +1142,16 @@ async function onDrop(event) {
 }
 
 async function loadFile(file) {
+  showLoading();
   try {
     console.log('[PADRES] Chargement du fichier :', file.name);
+    updateLoading(10, 'Lecture du fichier…');
     const originalBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(originalBuffer);
     console.log('[PADRES] Taille du fichier (octets) :', bytes.length);
+
+    updateLoading(35, 'Analyse du classeur Excel…');
+    await yieldToPaint();
     const bytesForRead = new Uint8Array(bytes); // copie indépendante
     const workbook = XLSX.read(bytesForRead, { type: "array" });
     // Vérifier que le classeur contient des feuilles
@@ -1043,11 +1160,18 @@ async function loadFile(file) {
       showFormatError();
       return;
     }
+
+    updateLoading(60, 'Extraction des lignes…');
+    await yieldToPaint();
     const sheetName = workbook.SheetNames.includes("data") ? "data" : workbook.SheetNames[0];
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
+
+    updateLoading(85, 'Traitement des données…');
+    await yieldToPaint();
     const filePath = typeof file.path === 'string' && file.path.length > 0 ? file.path : file.name;
     const success = processData(rows, file.name, filePath);
     if (success) {
+      updateLoading(100, 'Terminé');
       // Sauvegarder pour rechargement (Blob : format le plus fiable pour IndexedDB)
       saveFileForReload(file, new Blob([new Uint8Array(bytes)]));
     } else {
@@ -1056,6 +1180,8 @@ async function loadFile(file) {
   } catch (e) {
     console.error('[PADRES] Erreur lors de la lecture :', e);
     alert('Erreur lors de la lecture du fichier : ' + e.message);
+  } finally {
+    hideLoading();
   }
 }
 
@@ -1114,6 +1240,8 @@ async function tryReloadLastFile() {
   const fileName = localStorage.getItem('padres_file_name');
   if (!fileName) return false;
   console.log('[PADRES] Tentative de rechargement automatique de :', fileName);
+  showLoading();
+  updateLoading(10, 'Récupération du fichier en cache…');
   try {
     const storedData = await new Promise((resolve, reject) => {
       const req = indexedDB.open('padres_db', 1);
@@ -1162,6 +1290,8 @@ async function tryReloadLastFile() {
       return false;
     }
 
+    updateLoading(35, 'Analyse du classeur Excel…');
+    await yieldToPaint();
     const filePath = localStorage.getItem('padres_file_path') || fileName;
     const workbook = XLSX.read(new Uint8Array(bytes), { type: "array" });
     if (!workbook || !workbook.SheetNames || workbook.SheetNames.length === 0) {
@@ -1169,11 +1299,18 @@ async function tryReloadLastFile() {
       clearReloadCache();
       return false;
     }
+
+    updateLoading(60, 'Extraction des lignes…');
+    await yieldToPaint();
     const sheetName = workbook.SheetNames.includes("data") ? "data" : workbook.SheetNames[0];
     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: true });
+
+    updateLoading(85, 'Traitement des données…');
+    await yieldToPaint();
     const success = processData(rows, fileName, filePath);
     if (success) {
       console.log('[PADRES] Rechargement automatique réussi :', fileName);
+      updateLoading(100, 'Terminé');
     } else {
       console.error('[PADRES] Rechargement automatique échoué (validation des données)');
       clearReloadCache();
@@ -1183,6 +1320,8 @@ async function tryReloadLastFile() {
     console.error('[PADRES] Rechargement impossible :', e);
     clearReloadCache();
     return false;
+  } finally {
+    hideLoading();
   }
 }
 
@@ -1291,6 +1430,8 @@ function processData(rows, fileName, filePath) {
   state.mappedCols = mappedCols;
   state.data = cleaned;
   state.loaded = true;
+  // Masquer les blocs de chargement des pages de données
+  setNoFileState(false);
   // Afficher les bornes de période dès le premier chargement
   updatePeriodRangeLabels();
 
@@ -1312,6 +1453,18 @@ function processData(rows, fileName, filePath) {
   return true;
 }
 
+// ---------- États vides / bloc de chargement ----------
+function setNoFileState(noFile) {
+  const pages = ['dashboard', 'ressources', 'production', 'debits', 'ventes'];
+  pages.forEach(p => {
+    document.getElementById(p + '-empty').style.display = noFile ? 'block' : 'none';
+    if (noFile) {
+      document.getElementById(p + '-no-data').style.display = 'none';
+      document.getElementById(p + '-content').style.display = 'none';
+    }
+  });
+}
+
 function showFormatError() {
   // Réinitialiser l'état
   state.loaded = false;
@@ -1328,18 +1481,8 @@ function showFormatError() {
   success.style.border = '1px solid #f5c6cb';
   success.textContent = '❌ Erreur de format : le fichier sélectionné ne semble pas être un fichier PADRES données historiques valide.';
 
-  const info = document.getElementById('app-info');
-  info.innerHTML = '';
-
-  // Afficher les états vides
-  document.getElementById('dashboard-empty').style.display = 'block';
-  document.getElementById('ressources-empty').style.display = 'block';
-  document.getElementById('debits-empty').style.display = 'block';
-  document.getElementById('ventes-empty').style.display = 'block';
-  document.getElementById('dashboard-content').style.display = 'none';
-  document.getElementById('ressources-content').style.display = 'none';
-  document.getElementById('debits-content').style.display = 'none';
-  document.getElementById('ventes-content').style.display = 'none';
+  // Afficher le bloc de chargement sur les pages de données
+  setNoFileState(true);
 
   // Aller à la page App
   showPage('app');
@@ -1472,11 +1615,11 @@ function renderDashboard() {
   if (filtered.length === 0) {
     console.error('[PADRES] renderDashboard() : AUCUNE donnée dans la période. data.length=' + state.data.length);
     document.getElementById('dashboard-content').style.display = 'none';
-    document.getElementById('dashboard-empty').style.display = 'block';
+    document.getElementById('dashboard-no-data').style.display = 'block';
     return;
   }
   document.getElementById('dashboard-content').style.display = 'block';
-  document.getElementById('dashboard-empty').style.display = 'none';
+  document.getElementById('dashboard-no-data').style.display = 'none';
 
   // KPI — "Mesure la plus récente" = dernière date du fichier (pas de la période filtrée)
   const fileLatest = state.data[state.data.length - 1];
@@ -1603,11 +1746,11 @@ function renderRessources() {
   const filtered = filterDataByPeriod();
   if (filtered.length === 0) {
     document.getElementById('ressources-content').style.display = 'none';
-    document.getElementById('ressources-empty').style.display = 'block';
+    document.getElementById('ressources-no-data').style.display = 'block';
     return;
   }
   document.getElementById('ressources-content').style.display = 'block';
-  document.getElementById('ressources-empty').style.display = 'none';
+  document.getElementById('ressources-no-data').style.display = 'none';
 
   const dates = filtered.map(d => new Date(d.time));
 
@@ -1784,11 +1927,11 @@ function renderDebits() {
   const filtered = filterDataByPeriod();
   if (filtered.length === 0) {
     document.getElementById('debits-content').style.display = 'none';
-    document.getElementById('debits-empty').style.display = 'block';
+    document.getElementById('debits-no-data').style.display = 'block';
     return;
   }
   document.getElementById('debits-content').style.display = 'block';
-  document.getElementById('debits-empty').style.display = 'none';
+  document.getElementById('debits-no-data').style.display = 'none';
 
   const dates = filtered.map(d => new Date(d.time));
 
@@ -1797,17 +1940,17 @@ function renderDebits() {
   const tracesPegomas = [
     {
       x: dates,
-      y: filtered.map(d => d.values[COL.DEBIT_MIN_PEGOMAS] || 0),
-      name: 'Débit minimum journalier',
-      type: 'scatter', mode: 'lines',
-      line: { color: '#1f77b4', width: 2 }
-    },
-    {
-      x: dates,
       y: filtered.map(d => d.values[COL.DEBIT_MOYEN_PEGOMAS] || 0),
       name: 'Débit moyen journalier',
       type: 'scatter', mode: 'lines',
-      line: { color: '#2ca02c', width: 2 }
+      line: { color: '#2ca02c', width: 2, shape: 'spline' }
+    },
+    {
+      x: dates,
+      y: filtered.map(d => d.values[COL.DEBIT_MIN_PEGOMAS] || 0),
+      name: 'Débit minimum journalier',
+      type: 'scatter', mode: 'lines',
+      line: { color: '#1f77b4', width: 2, shape: 'spline' }
     },
     {
       x: dates,
@@ -1818,21 +1961,17 @@ function renderDebits() {
       name: 'Débit station hydrométrique',
       type: 'scatter', mode: 'lines',
       connectgaps: false,
-      line: { color: '#9467bd', width: 2 }
+      line: { color: '#9467bd', width: 2, shape: 'spline' }
     }
   ];
 
-  // Débit réservé : 310 l/s du 16/10 au 15/07, 150 l/s du 16/07 au 15/10
-  const debitReserve = filtered.map(d => {
-    const dt = new Date(d.time);
-    const monthDay = (dt.getMonth() + 1) * 100 + dt.getDate();
-    if (monthDay >= 716 && monthDay <= 1015) return 150;
-    return 310;
-  });
+  // Débit réservé au pont de Pégomas : 500 l/s toute l'année
+  const debitReserve = filtered.map(() => 500);
   tracesPegomas.push({
     x: dates, y: debitReserve, name: 'Débit réservé',
     type: 'scatter', mode: 'lines',
-    line: { color: '#000000', width: 2, dash: 'dash' }
+    line: { color: '#000000', width: 2, dash: 'dash' },
+    hoverinfo: 'skip'
   });
 
   // Seuils d'alerte Pégomas (cahier des charges §6.2)
@@ -1852,7 +1991,7 @@ function renderDebits() {
   });
 
   const layoutPegomas = {
-    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    xaxis: { tickformat: '%d/%m/%Y' },
     yaxis: { title: 'Débit (l/s)' },
     legend: { orientation: 'h', y: -0.15 },
     margin: { t: 30, r: 20, b: 50, l: 60 },
@@ -1871,7 +2010,7 @@ function renderDebits() {
       name: 'Débit station hydrométrique',
       type: 'scatter', mode: 'lines',
       connectgaps: false,
-      line: { color: '#1f77b4', width: 2 }
+      line: { color: '#1f77b4', width: 2, shape: 'spline' }
     }
   ];
   // Seuils d'alerte Ajustadoux (cahier des charges §6.2)
@@ -1891,7 +2030,7 @@ function renderDebits() {
   });
 
   const layoutCallian = {
-    xaxis: { title: 'Date', tickformat: '%d/%m/%Y' },
+    xaxis: { tickformat: '%d/%m/%Y' },
     yaxis: { title: 'Débit (l/s)' },
     legend: { orientation: 'h', y: -0.15 },
     margin: { t: 30, r: 20, b: 50, l: 60 },
@@ -1905,11 +2044,11 @@ function renderProduction() {
   const filtered = filterDataByPeriod();
   if (filtered.length === 0) {
     document.getElementById('production-content').style.display = 'none';
-    document.getElementById('production-empty').style.display = 'block';
+    document.getElementById('production-no-data').style.display = 'block';
     return;
   }
   document.getElementById('production-content').style.display = 'block';
-  document.getElementById('production-empty').style.display = 'none';
+  document.getElementById('production-no-data').style.display = 'none';
 
   const dates = filtered.map(d => new Date(d.time));
 
@@ -2087,11 +2226,11 @@ function renderVentes() {
   const filtered = filterDataByPeriod();
   if (filtered.length === 0) {
     document.getElementById('ventes-content').style.display = 'none';
-    document.getElementById('ventes-empty').style.display = 'block';
+    document.getElementById('ventes-no-data').style.display = 'block';
     return;
   }
   document.getElementById('ventes-content').style.display = 'block';
-  document.getElementById('ventes-empty').style.display = 'none';
+  document.getElementById('ventes-no-data').style.display = 'none';
 
   const dates = filtered.map(d => new Date(d.time));
   const vegTotal = filtered.map(d => getVEG(d));
@@ -2193,6 +2332,7 @@ function updateAppPage() {
     <h3>Débits réservés</h3>
     <ul>
       <li>Loup (aval Gréolières + Bramafan) : <strong>310 l/s</strong> du 16/10 au 15/07, <strong>150 l/s</strong> du 16/07 au 15/10</li>
+      <li>Pont de Pégomas : <strong>500 l/s</strong> toute l'année</li>
     </ul>
     <h3>Seuils d'alerte</h3>
     <ul>
@@ -2263,12 +2403,8 @@ async function init() {
   // Essayer de recharger le dernier fichier
   const reloaded = await tryReloadLastFile();
   if (!reloaded) {
-    // État vide
-    document.getElementById('dashboard-empty').style.display = 'block';
-    document.getElementById('ressources-empty').style.display = 'block';
-    document.getElementById('production-empty').style.display = 'block';
-    document.getElementById('debits-empty').style.display = 'block';
-    document.getElementById('ventes-empty').style.display = 'block';
+    // État vide : afficher le bloc de chargement sur les pages de données
+    setNoFileState(true);
   }
 }
 
