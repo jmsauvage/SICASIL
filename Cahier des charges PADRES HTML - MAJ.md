@@ -331,7 +331,11 @@ La valeur par défaut est **30 derniers jours**.
 
 Le choix doit rester mémorisé lors du changement de page.
 
-Le mode Personnalisé doit afficher Date début et Date fin, avec mémorisation des valeurs. Si les dates ne sont pas définies, les bornes des données sont utilisées par défaut.
+Le mode Personnalisé affiche :
+- un **slider à deux poignées** représentant l'ensemble des dates disponibles, pour sélectionner graphiquement les dates de début et de fin ;
+- les champs **Date début** et **Date fin**, mis à jour en temps réel lors du déplacement des poignées (et inversement).
+
+Les valeurs sont mémorisées. Si les dates ne sont pas définies, les bornes des données sont utilisées par défaut.
 
 ### 7.1 Affichage des bornes de période
 
@@ -351,6 +355,8 @@ Cet affichage doit :
 - apparaître sur **toutes les pages** concernées par le filtre
 - être mis à jour dès le **premier chargement** du fichier (pas seulement après un changement de filtre)
 - se mettre à jour à chaque changement de période ou de dates personnalisées
+
+En mode **Personnalisé**, ce libellé « ➜ du … au … » est **masqué** (il ferait doublon avec les champs Date début / Date fin).
 
 Les graphiques suivants **ne dépendent pas** de ce filtre global :
 - Le lac de Saint-Cassien (utilise tout l'historique)
@@ -398,7 +404,7 @@ Cela corrige les graphiques **mal retaillés** (trop petits avec espace blanc, o
 
 ## 8. Page Tableau de bord
 
-- Titre principal : « 💧 PADRES - Tableau de bord SICASIL »
+- Titre principal : « 📊 Tableau de bord SICASIL »
 - Section « 📈 Production »
 
 ### KPI
@@ -553,6 +559,9 @@ Affiche les 3 valeurs de débit disponibles à Pégomas :
 Affiche également le **débit réservé** :
 - 500 l/s toute l'année
 
+**Surbrillance des passages sous le débit réservé :**
+- Pour chaque courbe de débit, chaque intervalle où la courbe passe **sous le débit réservé (500 l/s)** est mis en évidence par un **remplissage rouge pâle** sur toute la hauteur du graphique, délimité par **deux lignes verticales rouges fines** aux bornes de l'intervalle.
+
 **Lignes horizontales pointillées des seuils d'alerte :**
 
 | Niveau | Couleur | Seuil (l/s) |
@@ -573,16 +582,16 @@ Affiche le débit de la station hydrométrique.
 | Alerte renforcée | Orange | 550 |
 | Crise | Rouge | 400 |
 
-### 13.1 Filtrage des valeurs nulles (débits station hydrométrique)
+### 13.1 Filtrage des valeurs nulles ou négatives
 
-Pour les séries **« Débit station hydrométrique »** des deux graphiques (Pont de Pégomas et Ajustadoux/Callian), les valeurs **0 ou vides** correspondent à une **absence de mesure** et non à un débit réel nul.
+Pour les séries de débit des deux graphiques (Débit minimum journalier, Débit moyen journalier et Débit station hydrométrique), les valeurs **≤ 0** (nulles ou négatives) correspondent à une **absence de mesure** et non à un débit réel.
 
 Ces valeurs sont donc **exclues de l'affichage** :
 
 - Elles sont converties en `null` (aucun point tracé) dans la série.
 - `connectgaps` est désactivé (`false`) : aucune interpolation entre deux points séparés par un trou.
 - La courbe **s'arrête** et ne descend **pas artificiellement à zéro** en fin de période.
-- Les autres séries des graphiques (Débit minimum journalier, Débit moyen journalier, Débit réservé, seuils d'alerte) ne sont pas concernées par ce filtre.
+- L'axe Y ne descend pas jusqu'à 0 : il s'ajuste aux valeurs positives disponibles (y compris lors d'un zoom).
 
 ## 14. Page App
 

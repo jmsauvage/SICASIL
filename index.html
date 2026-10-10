@@ -134,13 +134,85 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
   font-size: 14px;
   font-family: inherit;
 }
-.filter-bar .custom-dates { display: none; gap: 10px; align-items: center; }
+.filter-bar .custom-dates { display: none; gap: 10px; align-items: center; flex: 1 1 auto; min-width: 0; }
 .filter-bar .custom-dates.show { display: flex; }
 .filter-bar .period-range-label {
   font-size: 13px;
   color: var(--text-light);
   font-weight: 500;
   white-space: nowrap;
+}
+/* Slider double poignee (periode personnalisee) */
+.range-slider {
+  position: relative;
+  flex: 1 1 150px;
+  min-width: 150px;
+  height: 34px;
+}
+.range-slider-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background: #e9ecef;
+  border-radius: 999px;
+}
+.range-slider-fill {
+  position: absolute;
+  top: 50%;
+  height: 6px;
+  transform: translateY(-50%);
+  background: var(--primary);
+  border-radius: 999px;
+  pointer-events: none;
+}
+.range-slider input[type="range"] {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  margin: 0;
+  transform: translateY(-50%);
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.range-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--primary);
+  cursor: grab;
+  pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.range-slider input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--primary);
+  cursor: grab;
+  pointer-events: auto;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.range-slider input[type="range"]::-moz-range-track {
+  background: transparent;
+}
+.range-slider input[type="range"]:disabled::-webkit-slider-thumb {
+  border-color: #b0b0b0;
+  cursor: default;
+}
+.range-slider input[type="range"]:disabled::-moz-range-thumb {
+  border-color: #b0b0b0;
+  cursor: default;
 }
 /* Chart containers */
 .chart-container {
@@ -396,7 +468,7 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
 
   <!-- ========== PAGE TABLEAU DE BORD ========== -->
   <div class="page active" id="page-dashboard">
-    <h1>💧 PADRES - Tableau de bord SICASIL</h1>
+    <h1>📊 Tableau de bord SICASIL</h1>
     <div class="file-upload" id="dashboard-empty" style="display:none;"
          onclick="document.getElementById('file-input').click()"
          ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
@@ -427,6 +499,12 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <input type="date" id="custom-start" onchange="onCustomDateChange()">
           <label>Au :</label>
           <input type="date" id="custom-end" onchange="onCustomDateChange()">
+          <div class="range-slider">
+            <div class="range-slider-track"></div>
+            <div class="range-slider-fill" id="range-fill"></div>
+            <input type="range" id="range-start" min="0" max="1" step="1" value="0" oninput="onRangeInput(event)" onchange="onRangeChange()">
+            <input type="range" id="range-end" min="0" max="1" step="1" value="1" oninput="onRangeInput(event)" onchange="onRangeChange()">
+          </div>
         </div>
       </div>
 
@@ -502,6 +580,12 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <input type="date" id="custom-start-2" onchange="onCustomDateChange()">
           <label>Au :</label>
           <input type="date" id="custom-end-2" onchange="onCustomDateChange()">
+          <div class="range-slider">
+            <div class="range-slider-track"></div>
+            <div class="range-slider-fill" id="range-fill-2"></div>
+            <input type="range" id="range-start-2" min="0" max="1" step="1" value="0" oninput="onRangeInput(event)" onchange="onRangeChange()">
+            <input type="range" id="range-end-2" min="0" max="1" step="1" value="1" oninput="onRangeInput(event)" onchange="onRangeChange()">
+          </div>
         </div>
       </div>
 
@@ -560,6 +644,12 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <input type="date" id="custom-start-5" onchange="onCustomDateChange()">
           <label>Au :</label>
           <input type="date" id="custom-end-5" onchange="onCustomDateChange()">
+          <div class="range-slider">
+            <div class="range-slider-track"></div>
+            <div class="range-slider-fill" id="range-fill-5"></div>
+            <input type="range" id="range-start-5" min="0" max="1" step="1" value="0" oninput="onRangeInput(event)" onchange="onRangeChange()">
+            <input type="range" id="range-end-5" min="0" max="1" step="1" value="1" oninput="onRangeInput(event)" onchange="onRangeChange()">
+          </div>
         </div>
       </div>
 
@@ -623,6 +713,12 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <input type="date" id="custom-start-3" onchange="onCustomDateChange()">
           <label>Au :</label>
           <input type="date" id="custom-end-3" onchange="onCustomDateChange()">
+          <div class="range-slider">
+            <div class="range-slider-track"></div>
+            <div class="range-slider-fill" id="range-fill-3"></div>
+            <input type="range" id="range-start-3" min="0" max="1" step="1" value="0" oninput="onRangeInput(event)" onchange="onRangeChange()">
+            <input type="range" id="range-end-3" min="0" max="1" step="1" value="1" oninput="onRangeInput(event)" onchange="onRangeChange()">
+          </div>
         </div>
       </div>
 
@@ -671,6 +767,12 @@ h3 { font-size: 16px; margin: 15px 0 10px; }
           <input type="date" id="custom-start-4" onchange="onCustomDateChange()">
           <label>Au :</label>
           <input type="date" id="custom-end-4" onchange="onCustomDateChange()">
+          <div class="range-slider">
+            <div class="range-slider-track"></div>
+            <div class="range-slider-fill" id="range-fill-4"></div>
+            <input type="range" id="range-start-4" min="0" max="1" step="1" value="0" oninput="onRangeInput(event)" onchange="onRangeChange()">
+            <input type="range" id="range-end-4" min="0" max="1" step="1" value="1" oninput="onRangeInput(event)" onchange="onRangeChange()">
+          </div>
         </div>
       </div>
 
@@ -911,19 +1013,141 @@ function syncPeriodSelects() {
   ['custom-dates', 'custom-dates-2', 'custom-dates-3', 'custom-dates-4', 'custom-dates-5'].forEach(id => {
     document.getElementById(id).classList.toggle('show', showCustom);
   });
+  syncCustomDateWidgets();
+  updatePeriodRangeLabels();
+}
+
+// ---------- Periode personnalisee : slider double poignee ----------
+let dataBoundsCache = null;
+
+function toLocalDateInputValue(d) {
+  if (!d || isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+
+function getDataBounds() {
+  if (dataBoundsCache) return dataBoundsCache;
+  if (!state.loaded || state.data.length === 0) return null;
+  let minTime = Infinity, maxTime = -Infinity;
+  for (const d of state.data) {
+    const t = d.time !== undefined ? d.time : d.date.getTime();
+    if (isNaN(t)) continue;
+    if (t < minTime) minTime = t;
+    if (t > maxTime) maxTime = t;
+  }
+  if (minTime === Infinity || maxTime === -Infinity) return null;
+  dataBoundsCache = { min: new Date(minTime), max: new Date(maxTime) };
+  return dataBoundsCache;
+}
+
+function getPageSuffix() {
+  const activePage = document.querySelector('.page.active').id;
+  if (activePage === 'page-ressources') return '-2';
+  if (activePage === 'page-ventes') return '-3';
+  if (activePage === 'page-debits') return '-4';
+  if (activePage === 'page-production') return '-5';
+  return '';
+}
+
+function syncRangeSliders() {
+  const bounds = getDataBounds();
+  const suffixes = ['', '-2', '-3', '-4', '-5'];
+  for (const suffix of suffixes) {
+    const startInput = document.getElementById('range-start' + suffix);
+    const endInput = document.getElementById('range-end' + suffix);
+    const fill = document.getElementById('range-fill' + suffix);
+    if (!startInput || !endInput) continue;
+    if (!bounds) {
+      startInput.disabled = true;
+      endInput.disabled = true;
+      if (fill) fill.style.width = '0%';
+      continue;
+    }
+    startInput.disabled = false;
+    endInput.disabled = false;
+    const span = bounds.max.getTime() - bounds.min.getTime();
+    const totalDays = Math.round(span / 86400000);
+    const maxIndex = Math.max(totalDays, 1);
+    startInput.min = 0;
+    startInput.max = maxIndex;
+    endInput.min = 0;
+    endInput.max = maxIndex;
+    let s = 0;
+    let e = maxIndex;
+    if (state.customStart) {
+      const t = new Date(state.customStart).getTime();
+      s = Math.round((t - bounds.min.getTime()) / 86400000);
+    }
+    if (state.customEnd) {
+      const t = new Date(state.customEnd).getTime();
+      e = Math.round((t - bounds.min.getTime()) / 86400000);
+    }
+    s = Math.max(0, Math.min(maxIndex, s));
+    e = Math.max(0, Math.min(maxIndex, e));
+    if (s > e) {
+      const tmp = s;
+      s = e;
+      e = tmp;
+    }
+    startInput.value = s;
+    endInput.value = e;
+    if (fill) {
+      const fS = s / maxIndex;
+      const fE = e / maxIndex;
+      fill.style.left = 'calc(9px + (100% - 18px) * ' + fS + ')';
+      fill.style.width = 'calc((100% - 18px) * ' + (fE - fS) + ')';
+    }
+  }
+}
+
+function syncCustomDateWidgets() {
+  const startIds = [
+    'custom-start', 'custom-start-2', 'custom-start-3',
+    'custom-start-4', 'custom-start-5'
+  ];
+  const endIds = [
+    'custom-end', 'custom-end-2', 'custom-end-3',
+    'custom-end-4', 'custom-end-5'
+  ];
   if (state.customStart) {
-    const iso = state.customStart.toISOString().split('T')[0];
-    ['custom-start', 'custom-start-2', 'custom-start-3', 'custom-start-4', 'custom-start-5'].forEach(id => {
+    const iso = toLocalDateInputValue(state.customStart);
+    for (const id of startIds) {
       document.getElementById(id).value = iso;
-    });
+    }
   }
   if (state.customEnd) {
-    const iso = state.customEnd.toISOString().split('T')[0];
-    ['custom-end', 'custom-end-2', 'custom-end-3', 'custom-end-4', 'custom-end-5'].forEach(id => {
+    const iso = toLocalDateInputValue(state.customEnd);
+    for (const id of endIds) {
       document.getElementById(id).value = iso;
-    });
+    }
   }
+  syncRangeSliders();
+}
+
+function onRangeInput(event) {
+  const bounds = getDataBounds();
+  if (!bounds) return;
+  const suffix = getPageSuffix();
+  const a = document.getElementById('range-start' + suffix);
+  const b = document.getElementById('range-end' + suffix);
+  if (!a || !b) return;
+  const max = parseInt(a.max, 10) || 1;
+  let s = parseInt(a.value, 10);
+  let e = parseInt(b.value, 10);
+  if (event.target === a && s > e) { s = e; a.value = s; }
+  if (event.target === b && e < s) { e = s; b.value = e; }
+  const base = bounds.min.getTime();
+  state.customStart = new Date(base + s * 86400000);
+  state.customEnd = new Date(base + e * 86400000);
+  syncCustomDateWidgets();
+}
+
+function onRangeChange() {
   updatePeriodRangeLabels();
+  renderCurrentPage();
 }
 
 // Affiche "du … au …" à droite du sélecteur de période (toutes les pages)
@@ -935,8 +1159,9 @@ function updatePeriodRangeLabels() {
     'period-range-label-4',
     'period-range-label-5'
   ];
+  const isCustom = state.period === 'custom';
   let text = '';
-  if (state.loaded) {
+  if (state.loaded && isCustom === false) {
     const range = getPeriodRange();
     if (range && range.start && range.end) {
       text = '➜ du ' + fmtDateLong(range.start) + ' au ' + fmtDateLong(range.end);
@@ -944,7 +1169,10 @@ function updatePeriodRangeLabels() {
   }
   ids.forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.textContent = text;
+    if (el) {
+      el.textContent = text;
+      el.style.display = isCustom ? 'none' : '';
+    }
   });
 }
 
@@ -972,6 +1200,7 @@ function onCustomDateChange() {
   const e = document.getElementById(endId).value;
   if (s) state.customStart = new Date(s + 'T00:00:00');
   if (e) state.customEnd = new Date(e + 'T00:00:00');
+  syncRangeSliders();
   updatePeriodRangeLabels();
   renderCurrentPage();
 }
@@ -1430,10 +1659,12 @@ function processData(rows, fileName, filePath) {
   state.mappedCols = mappedCols;
   state.data = cleaned;
   state.loaded = true;
+  dataBoundsCache = null;
   // Masquer les blocs de chargement des pages de données
   setNoFileState(false);
   // Afficher les bornes de période dès le premier chargement
   updatePeriodRangeLabels();
+  syncRangeSliders();
 
   // Initialiser les années pour le lac
   state.cassienAllYears = [];
@@ -1469,6 +1700,7 @@ function showFormatError() {
   // Réinitialiser l'état
   state.loaded = false;
   state.data = [];
+  dataBoundsCache = null;
   state.colMap = {};
   state.fileName = null;
   state.filePath = null;
@@ -1923,6 +2155,82 @@ function renderCassien() {
 }
 
 // ---------- Rendu : Débits réservés ----------
+function isBelow(v, threshold) {
+  if (v === null) return false;
+  if (v === undefined) return false;
+  return v < threshold;
+}
+
+function toPos(v) {
+  if (v === null) return null;
+  if (v === undefined) return null;
+  if (v <= 0) return null;
+  return v;
+}
+
+function buildBelowReserveShapes(dates, values, threshold) {
+  const shapes = [];
+  const lineColor = '#d62728';
+  const fillColor = 'rgba(214, 39, 40, 0.10)';
+  let start = 0;
+  let inRun = false;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    const below = isBelow(v, threshold);
+    if (below) {
+      if (inRun === false) {
+        inRun = true;
+        start = i;
+      }
+    } else {
+      if (inRun) {
+        const x1 = dates[start].getTime();
+        const x2 = dates[i - 1].getTime();
+        addBelowShapes(shapes, x1, x2, lineColor, fillColor);
+        inRun = false;
+      }
+    }
+  }
+  if (inRun) {
+    const x1 = dates[start].getTime();
+    const x2 = dates[values.length - 1].getTime();
+    addBelowShapes(shapes, x1, x2, lineColor, fillColor);
+  }
+  return shapes;
+}
+
+function addBelowShapes(shapes, x1, x2, lineColor, fillColor) {
+  shapes.push({
+    type: 'rect',
+    x0: x1,
+    x1: x2,
+    yref: 'paper',
+    y0: 0,
+    y1: 1,
+    fillcolor: fillColor,
+    line: { width: 0 },
+    layer: 'below'
+  });
+  shapes.push({
+    type: 'line',
+    x0: x1,
+    x1: x1,
+    yref: 'paper',
+    y0: 0,
+    y1: 1,
+    line: { color: lineColor, width: 1 }
+  });
+  shapes.push({
+    type: 'line',
+    x0: x2,
+    x1: x2,
+    yref: 'paper',
+    y0: 0,
+    y1: 1,
+    line: { color: lineColor, width: 1 }
+  });
+}
+
 function renderDebits() {
   const filtered = filterDataByPeriod();
   if (filtered.length === 0) {
@@ -1940,24 +2248,21 @@ function renderDebits() {
   const tracesPegomas = [
     {
       x: dates,
-      y: filtered.map(d => d.values[COL.DEBIT_MOYEN_PEGOMAS] || 0),
+      y: filtered.map(d => toPos(d.values[COL.DEBIT_MOYEN_PEGOMAS])),
       name: 'Débit moyen journalier',
       type: 'scatter', mode: 'lines',
       line: { color: '#2ca02c', width: 2, shape: 'spline' }
     },
     {
       x: dates,
-      y: filtered.map(d => d.values[COL.DEBIT_MIN_PEGOMAS] || 0),
+      y: filtered.map(d => toPos(d.values[COL.DEBIT_MIN_PEGOMAS])),
       name: 'Débit minimum journalier',
       type: 'scatter', mode: 'lines',
       line: { color: '#1f77b4', width: 2, shape: 'spline' }
     },
     {
       x: dates,
-      y: filtered.map(d => {
-        const v = d.values[COL.DEBIT_ST_PEGOMAS];
-        return (v === undefined || v === null || v === 0) ? null : v;
-      }),
+      y: filtered.map(d => toPos(d.values[COL.DEBIT_ST_PEGOMAS])),
       name: 'Débit station hydrométrique',
       type: 'scatter', mode: 'lines',
       connectgaps: false,
@@ -1990,12 +2295,21 @@ function renderDebits() {
     });
   });
 
+  const shapesPegomas = [];
+  const minVals = filtered.map(d => toPos(d.values[COL.DEBIT_MIN_PEGOMAS]));
+  const moyVals = filtered.map(d => toPos(d.values[COL.DEBIT_MOYEN_PEGOMAS]));
+  const stVals = filtered.map(d => toPos(d.values[COL.DEBIT_ST_PEGOMAS]));
+  shapesPegomas.push(...buildBelowReserveShapes(dates, minVals, 500));
+  shapesPegomas.push(...buildBelowReserveShapes(dates, moyVals, 500));
+  shapesPegomas.push(...buildBelowReserveShapes(dates, stVals, 500));
+
   const layoutPegomas = {
     xaxis: { tickformat: '%d/%m/%Y' },
     yaxis: { title: 'Débit (l/s)' },
     legend: { orientation: 'h', y: -0.15 },
     margin: { t: 30, r: 20, b: 50, l: 60 },
-    hovermode: 'x unified'
+    hovermode: 'x unified',
+    shapes: shapesPegomas
   };
   Plotly.react('chart-debits-pegomas', tracesPegomas, layoutPegomas, { responsive: true, displayModeBar: false });
 
@@ -2003,10 +2317,7 @@ function renderDebits() {
   const tracesCallian = [
     {
       x: dates,
-      y: filtered.map(d => {
-        const v = d.values[COL.DEBIT_CALLIAN];
-        return (v === undefined || v === null || v === 0) ? null : v;
-      }),
+      y: filtered.map(d => toPos(d.values[COL.DEBIT_CALLIAN])),
       name: 'Débit station hydrométrique',
       type: 'scatter', mode: 'lines',
       connectgaps: false,
